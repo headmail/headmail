@@ -1,0 +1,25 @@
+# Example Configuration
+
+server:
+  public:
+    port: 8080
+    url: "https://mailer.example.com"
+  admin:
+    addr: ""
+    port: 8081
+  
+smtp:
+  host: "smtp.gmail.com"
+  port: 587
+  username: "user@example.com"
+  password: "mail-password"
+  from:
+    name: "Example Service"
+    email: "noreply@example.com"
+  send:
+    batch_size: 100 # Number of emails to send in a batch
+    throttle: 50    # Maximum emails per second
+
+database:
+  type: "sqlite" # sqlite, mysql, postgresql, mongodb
+  url : "file:data.db?cache=shared&mode=rwc"
