@@ -12,16 +12,28 @@ import (
 // ListServiceProvider defines the interface for the list service.
 type ListServiceProvider interface {
 	CreateList(ctx context.Context, list *domain.List) error
+	GetList(ctx context.Context, id string) (*domain.List, error)
+	UpdateList(ctx context.Context, list *domain.List) error
+	DeleteList(ctx context.Context, id string) error
+	ListLists(ctx context.Context, filter repository.ListFilter, pagination repository.Pagination) ([]*domain.List, int, error)
+
+	GetSubscriberCount(ctx context.Context, listID string) (int, error)
+	AddSubscribers(ctx context.Context, subscribers []*domain.Subscriber) error
+	GetSubscriber(ctx context.Context, id string) (*domain.Subscriber, error)
+	UpdateSubscriber(ctx context.Context, subscriber *domain.Subscriber) error
+	DeleteSubscriber(ctx context.Context, id string) error
+	ListSubscribers(ctx context.Context, filter repository.SubscriberFilter, pagination repository.Pagination) ([]*domain.Subscriber, int, error)
 }
 
 // ListService provides business logic for list management.
 type ListService struct {
-	repo repository.ListRepository
+	listRepo       repository.ListRepository
+	subscriberRepo repository.SubscriberRepository
 }
 
 // NewListService creates a new ListService.
-func NewListService(repo repository.ListRepository) *ListService {
-	return &ListService{repo: repo}
+func NewListService(listRepo repository.ListRepository, subscriberRepo repository.SubscriberRepository) *ListService {
+	return &ListService{listRepo: listRepo, subscriberRepo: subscriberRepo}
 }
 
 // CreateList creates a new mailing list.
@@ -34,7 +46,63 @@ func (s *ListService) CreateList(ctx context.Context, list *domain.List) error {
 	list.CreatedAt = now
 	list.UpdatedAt = now
 
-	return s.repo.Create(ctx, list)
+	return s.listRepo.Create(ctx, list)
 }
 
-// TODO: Implement other list service methods (Get, Update, Delete, List)
+// GetList retrieves a list by its ID.
+func (s *ListService) GetList(ctx context.Context, id string) (*domain.List, error) {
+	return s.listRepo.GetByID(ctx, id)
+}
+
+// UpdateList updates an existing list.
+func (s *ListService) UpdateList(ctx context.Context, list *domain.List) error {
+	list.UpdatedAt = time.Now().Unix()
+	return s.listRepo.Update(ctx, list)
+}
+
+// DeleteList deletes a list by its ID.
+func (s *ListService) DeleteList(ctx context.Context, id string) error {
+	return s.listRepo.Delete(ctx, id)
+}
+
+// ListLists lists all lists.
+func (s *ListService) ListLists(ctx context.Context, filter repository.ListFilter, pagination repository.Pagination) ([]*domain.List, int, error) {
+	return s.listRepo.List(ctx, filter, pagination)
+}
+
+// GetSubscriberCount returns the number of subscribers in a list.
+func (s *ListService) GetSubscriberCount(ctx context.Context, listID string) (int, error) {
+	return s.listRepo.GetSubscriberCount(ctx, listID)
+}
+
+// AddSubscribers add subscribers to a list.
+func (s *ListService) AddSubscribers(ctx context.Context, subscribers []*domain.Subscriber) error {
+	now := time.Now().Unix()
+	for _, s := range subscribers {
+		s.CreatedAt = now
+		s.UpdatedAt = now
+	}
+
+	return s.subscriberRepo.BulkUpsert(ctx, subscribers)
+}
+
+// GetSubscriber retrieves a subscriber by its ID.
+func (s *ListService) GetSubscriber(ctx context.Context, id string) (*domain.Subscriber, error) {
+	return s.subscriberRepo.GetByID(ctx, id)
+}
+
+// UpdateSubscriber updates an existing subscriber.
+func (s *ListService) UpdateSubscriber(ctx context.Context, subscriber *domain.Subscriber) error {
+	subscriber.UpdatedAt = time.Now().Unix()
+	return s.subscriberRepo.Update(ctx, subscriber)
+}
+
+// DeleteSubscriber deletes a subscriber by its ID.
+func (s *ListService) DeleteSubscriber(ctx context.Context, id string) error {
+	return s.subscriberRepo.Delete(ctx, id)
+}
+
+// ListSubscribers lists all subscribers for a list.
+func (s *ListService) ListSubscribers(ctx context.Context, filter repository.SubscriberFilter, pagination repository.Pagination) ([]*domain.Subscriber, int, error) {
+	return s.subscriberRepo.List(ctx, filter, pagination)
+}

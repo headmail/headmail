@@ -4,26 +4,35 @@ import "github.com/headmail/headmail/pkg/domain"
 
 // List is the GORM model for a mailing list.
 type List struct {
-	ID              string `gorm:"column:id;primaryKey"`
-	Name            string `gorm:"column:name"`
-	Description     string `gorm:"column:description"`
-	Tags            JSON   `gorm:"column:tags;type:json"`
-	SubscriberCount int    `gorm:"column:subscriber_count"`
-	CreatedAt       int64  `gorm:"column:created_at"`
-	UpdatedAt       int64  `gorm:"column:updated_at"`
-	DeletedAt       *int64 `gorm:"column:deleted_at;index"`
+	ID          string `gorm:"column:id;primaryKey"`
+	Name        string `gorm:"column:name"`
+	Description string `gorm:"column:description"`
+	Tags        JSON   `gorm:"column:tags;type:json"`
+	CreatedAt   int64  `gorm:"column:created_at"`
+	UpdatedAt   int64  `gorm:"column:updated_at"`
+	DeletedAt   *int64 `gorm:"column:deleted_at;index"`
 }
 
 // Subscriber is the GORM model for a subscriber.
 type Subscriber struct {
-	ID             string `gorm:"column:id;primaryKey"`
-	Email          string `gorm:"column:email;uniqueIndex"`
-	Name           string `gorm:"column:name"`
-	Status         string `gorm:"column:status"`
-	SubscribedAt   int64  `gorm:"column:subscribed_at"`
-	UnsubscribedAt *int64 `gorm:"column:unsubscribed_at"`
-	CreatedAt      int64  `gorm:"column:created_at"`
-	UpdatedAt      int64  `gorm:"column:updated_at"`
+	ID        string                  `gorm:"column:id;primaryKey"`
+	Email     string                  `gorm:"column:email;uniqueIndex"`
+	Name      string                  `gorm:"column:name"`
+	Status    domain.SubscriberStatus `gorm:"column:status"`
+	CreatedAt int64                   `gorm:"column:created_at"`
+	UpdatedAt int64                   `gorm:"column:updated_at"`
+	Lists     []SubscriberList        `gorm:"foreignKey:SubscriberID"`
+}
+
+// SubscriberList is the GORM model for the join table between subscribers and lists.
+type SubscriberList struct {
+	SubscriberID   string                      `gorm:"column:subscriber_id;primaryKey"`
+	ListID         string                      `gorm:"column:list_id;primaryKey"`
+	Status         domain.SubscriberListStatus `gorm:"column:status"`
+	SubscribedAt   *int64                      `gorm:"column:subscribed_at"`
+	UnsubscribedAt *int64                      `gorm:"column:unsubscribed_at"`
+	CreatedAt      int64                       `gorm:"column:created_at"`
+	UpdatedAt      int64                       `gorm:"column:updated_at"`
 }
 
 // Campaign is the GORM model for a campaign.

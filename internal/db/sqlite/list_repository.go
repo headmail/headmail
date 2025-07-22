@@ -26,27 +26,25 @@ func domainToListEntity(d *domain.List) (*List, error) {
 		return nil, err
 	}
 	return &List{
-		ID:              d.ID,
-		Name:            d.Name,
-		Description:     d.Description,
-		Tags:            tagsJSON,
-		SubscriberCount: d.SubscriberCount,
-		CreatedAt:       d.CreatedAt,
-		UpdatedAt:       d.UpdatedAt,
-		DeletedAt:       d.DeletedAt,
+		ID:          d.ID,
+		Name:        d.Name,
+		Description: d.Description,
+		Tags:        tagsJSON,
+		CreatedAt:   d.CreatedAt,
+		UpdatedAt:   d.UpdatedAt,
+		DeletedAt:   d.DeletedAt,
 	}, nil
 }
 
 // entityToListDomain converts a GORM List entity to a domain List.
 func entityToListDomain(e *List) (*domain.List, error) {
 	d := &domain.List{
-		ID:              e.ID,
-		Name:            e.Name,
-		Description:     e.Description,
-		SubscriberCount: e.SubscriberCount,
-		CreatedAt:       e.CreatedAt,
-		UpdatedAt:       e.UpdatedAt,
-		DeletedAt:       e.DeletedAt,
+		ID:          e.ID,
+		Name:        e.Name,
+		Description: e.Description,
+		CreatedAt:   e.CreatedAt,
+		UpdatedAt:   e.UpdatedAt,
+		DeletedAt:   e.DeletedAt,
 	}
 	if err := json.Unmarshal(e.Tags, &d.Tags); err != nil {
 		return nil, err
@@ -126,9 +124,32 @@ func (r *listRepository) List(ctx context.Context, filter repository.ListFilter,
 }
 
 func (r *listRepository) GetSubscriberCount(ctx context.Context, listID string) (int, error) {
-	panic("implement me")
+	var count int64
+	db := extractTx(ctx, r.db)
+	if err := db.WithContext(ctx).Model(&SubscriberList{}).Where("list_id = ?", listID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return int(count), nil
 }
 
 func (r *listRepository) GetSubscribers(ctx context.Context) (chan *domain.Subscriber, error) {
-	panic("implement me")
+	// This implementation is simplified and may not be suitable for large datasets.
+	// A more robust implementation would use streaming or pagination.
+	subscribersChan := make(chan *domain.Subscriber)
+
+	go func() {
+		defer close(subscribersChan)
+		var entities []Subscriber
+		db := extractTx(ctx, r.db)
+		if err := db.WithContext(ctx).Preload("Lists").Find(&entities).Error; err != nil {
+			// In a real app, you'd handle this error more gracefully
+			return
+		}
+
+		for _, entity := range entities {
+			subscribersChan <- entityToSubscriberDomain(&entity)
+		}
+	}()
+
+	return subscribersChan, nil
 }

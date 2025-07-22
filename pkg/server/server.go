@@ -13,6 +13,7 @@ import (
 	"github.com/headmail/headmail/pkg/db"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service"
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	// Import providers to register them
 	_ "github.com/headmail/headmail/internal/db/sqlite"
@@ -28,8 +29,9 @@ type Server struct {
 	publicServer *http.Server
 
 	// Services
-	listService *service.ListService
-	// TODO: Add other services
+	listService     service.ListServiceProvider
+	campaignService service.CampaignServiceProvider
+	deliveryService service.DeliveryServiceProvider
 }
 
 // Option defines a function that configures a Server.
@@ -69,8 +71,9 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 	}
 
 	// Initialize services
-	srv.listService = service.NewListService(srv.db.ListRepository())
-	// TODO: Initialize other services
+	srv.listService = service.NewListService(srv.db.ListRepository(), srv.db.SubscriberRepository())
+	srv.campaignService = service.NewCampaignService(srv.db.CampaignRepository())
+	srv.deliveryService = service.NewDeliveryService(srv.db.DeliveryRepository())
 
 	// Register routes
 	srv.registerMiddlewares()
@@ -86,9 +89,18 @@ func (s *Server) registerMiddlewares() {
 }
 
 func (s *Server) registerAdminRoutes() {
+	s.adminRouter.Get("/swagger/*", httpSwagger.WrapHandler)
+
 	listHandler := admin.NewListHandler(s.listService)
+	campaignHandler := admin.NewCampaignHandler(s.campaignService)
+	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService)
+	subscriberHandler := admin.NewSubscriberHandler(s.listService)
+
 	s.adminRouter.Route("/api", func(r chi.Router) {
 		listHandler.RegisterRoutes(r)
+		campaignHandler.RegisterRoutes(r)
+		deliveryHandler.RegisterRoutes(r)
+		subscriberHandler.RegisterRoutes(r)
 	})
 }
 

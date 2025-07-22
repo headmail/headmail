@@ -1,0 +1,983 @@
+basePath: /api
+definitions:
+  admin.CreateCampaignDeliveriesRequest:
+    properties:
+      individuals:
+        items:
+          $ref: '#/definitions/domain.Subscriber'
+        type: array
+      lists:
+        items:
+          type: string
+        type: array
+      scheduled_at:
+        type: integer
+    type: object
+  admin.CreateCampaignDeliveriesResponse:
+    properties:
+      deliveries_created:
+        type: integer
+      scheduled_at:
+        type: integer
+      status:
+        type: string
+    type: object
+  admin.CreateCampaignRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      from_email:
+        type: string
+      from_name:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      scheduled_at:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+      subject:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      template_html:
+        type: string
+      template_text:
+        type: string
+      utm_params:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  admin.CreateListRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  admin.CreateSubscriberRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/domain.SubscriberStatus'
+    type: object
+  admin.CreateSubscribersRequest:
+    properties:
+      append:
+        type: boolean
+      subscribers:
+        items:
+          $ref: '#/definitions/admin.CreateSubscriberRequest'
+        type: array
+    type: object
+  admin.CreateTransactionalDeliveryRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      subject:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  admin.DeleteResponse:
+    properties:
+      deleted:
+        type: boolean
+      message:
+        type: string
+    type: object
+  admin.EmptyResponse:
+    type: object
+  admin.PaginatedListResponse:
+    properties:
+      data: {}
+      pagination:
+        $ref: '#/definitions/admin.PaginationResponse'
+    type: object
+  admin.PaginationResponse:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  admin.UpdateCampaignRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      from_email:
+        type: string
+      from_name:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      scheduled_at:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+      subject:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      template_html:
+        type: string
+      template_text:
+        type: string
+      utm_params:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  admin.UpdateCampaignStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+    type: object
+  admin.UpdateListRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  admin.UpdateSubscriberRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/domain.SubscriberStatus'
+    type: object
+  domain.Campaign:
+    properties:
+      bounce_count:
+        type: integer
+      click_count:
+        type: integer
+      created_at:
+        description: Unix timestamp
+        type: integer
+      data:
+        additionalProperties: true
+        description: JSON data for templates
+        type: object
+      deleted_at:
+        description: For soft deletes
+        type: integer
+      delivered_count:
+        type: integer
+      failed_count:
+        type: integer
+      from_email:
+        description: Sender's email
+        type: string
+      from_name:
+        description: Sender's name
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        description: Additional email headers
+        type: object
+      id:
+        description: UUID
+        type: string
+      name:
+        description: Name of the campaign
+        type: string
+      open_count:
+        type: integer
+      recipient_count:
+        description: Calculated statistics
+        type: integer
+      scheduled_at:
+        description: Scheduled time for sending
+        type: integer
+      sent_at:
+        description: Time when sending was completed
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/domain.CampaignStatus'
+        description: Status of the campaign
+      subject:
+        description: Subject template
+        type: string
+      tags:
+        description: Tags for categorization
+        items:
+          type: string
+        type: array
+      template_html:
+        description: HTML template
+        type: string
+      template_text:
+        description: Plain text template
+        type: string
+      updated_at:
+        description: Unix timestamp
+        type: integer
+      utm_params:
+        additionalProperties:
+          type: string
+        description: UTM parameters for link tracking
+        type: object
+    type: object
+  domain.CampaignStatus:
+    enum:
+    - draft
+    - scheduled
+    - sending
+    - sent
+    - paused
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - CampaignStatusDraft
+    - CampaignStatusScheduled
+    - CampaignStatusSending
+    - CampaignStatusSent
+    - CampaignStatusPaused
+    - CampaignStatusCancelled
+  domain.Delivery:
+    properties:
+      bounce_count:
+        description: Number of bounces
+        type: integer
+      campaign_id:
+        description: Campaign ID (nullable for transactional)
+        type: string
+      click_count:
+        description: Number of clicks
+        type: integer
+      created_at:
+        description: Timestamps
+        type: integer
+      data:
+        additionalProperties: true
+        description: Individual data for templates
+        type: object
+      email:
+        description: Recipient's email
+        type: string
+      failed_at:
+        description: Time of failure
+        type: integer
+      failure_reason:
+        description: Reason for failure
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        description: Individual headers
+        type: object
+      id:
+        description: UUID
+        type: string
+      message_id:
+        description: SMTP Message ID
+        type: string
+      name:
+        description: Recipient's name
+        type: string
+      open_count:
+        description: Statistics
+        type: integer
+      opened_at:
+        description: First open time
+        type: integer
+      scheduled_at:
+        description: Scheduled time
+        type: integer
+      sent_at:
+        description: Time of sending
+        type: integer
+      status:
+        description: scheduled, sending, sent, delivered, failed, bounced
+        type: string
+      subject:
+        description: Actual sent subject
+        type: string
+      tags:
+        description: Tags for categorization
+        items:
+          type: string
+        type: array
+      type:
+        description: campaign, transactional
+        type: string
+    type: object
+  domain.List:
+    properties:
+      created_at:
+        description: Unix timestamp in seconds
+        type: integer
+      deleted_at:
+        description: For soft deletes
+        type: integer
+      description:
+        description: Description of the list
+        type: string
+      id:
+        description: UUID
+        type: string
+      name:
+        description: Name of the list
+        type: string
+      subscriber_count:
+        description: Calculated field for subscriber count
+        type: integer
+      tags:
+        description: Tags for categorization
+        items:
+          type: string
+        type: array
+      updated_at:
+        description: Unix timestamp in seconds
+        type: integer
+    type: object
+  domain.Subscriber:
+    properties:
+      created_at:
+        description: Unix timestamp in seconds
+        type: integer
+      email:
+        description: Unique email address
+        type: string
+      id:
+        description: UUID
+        type: string
+      lists:
+        items:
+          $ref: '#/definitions/domain.SubscriberList'
+        type: array
+      name:
+        description: Name of the subscriber
+        type: string
+      status:
+        $ref: '#/definitions/domain.SubscriberStatus'
+      updated_at:
+        description: Unix timestamp in seconds
+        type: integer
+    type: object
+  domain.SubscriberList:
+    properties:
+      created_at:
+        description: Unix timestamp in seconds
+        type: integer
+      list_id:
+        description: Foreign key to the List
+        type: string
+      status:
+        $ref: '#/definitions/domain.SubscriberListStatus'
+      subscribed_at:
+        description: Unix timestamp of subscription
+        type: integer
+      unsubscribed_at:
+        description: Unix timestamp of unsubscription
+        type: integer
+      updated_at:
+        description: Unix timestamp in seconds
+        type: integer
+    type: object
+  domain.SubscriberListStatus:
+    enum:
+    - confirmed
+    - unsubscribed
+    - bounced
+    - complained
+    type: string
+    x-enum-varnames:
+    - SubscriberListStatusConfirmed
+    - SubscriberListStatusUnsubscribed
+    - SubscriberListStatusBounced
+    - SubscriberListStatusComplained
+  domain.SubscriberStatus:
+    enum:
+    - enabled
+    - disabled
+    type: string
+    x-enum-varnames:
+    - SubscriberStatusEnabled
+    - SubscriberStatusDisabled
+info:
+  contact:
+    email: dev@headmail.io
+    name: API Support
+    url: https://headmail.io
+  description: This is an email campaign API server.
+  license:
+    name: AGPL-3.0
+    url: https://opensource.org/license/agpl-v3
+  title: Headmail API
+  version: "1.0"
+paths:
+  /campaigns:
+    get:
+      description: List all campaigns
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - collectionFormat: csv
+        description: Tags to filter by
+        in: query
+        items:
+          type: string
+        name: tags[]
+        type: array
+      - collectionFormat: csv
+        description: Status to filter by
+        in: query
+        items:
+          type: string
+        name: status[]
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.PaginatedListResponse'
+      summary: List all campaigns
+      tags:
+      - campaigns
+    post:
+      consumes:
+      - application/json
+      description: Create a new campaign
+      parameters:
+      - description: Campaign to create
+        in: body
+        name: campaign
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateCampaignRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Campaign'
+      summary: Create a new campaign
+      tags:
+      - campaigns
+  /campaigns/{campaignID}:
+    delete:
+      description: Delete a campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.DeleteResponse'
+      summary: Delete a campaign
+      tags:
+      - campaigns
+    get:
+      description: Get a campaign by ID
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Campaign'
+      summary: Get a campaign by ID
+      tags:
+      - campaigns
+    put:
+      consumes:
+      - application/json
+      description: Update a campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        type: string
+      - description: Campaign to update
+        in: body
+        name: campaign
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateCampaignRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Campaign'
+      summary: Update a campaign
+      tags:
+      - campaigns
+  /campaigns/{campaignID}/deliveries:
+    get:
+      description: List deliveries for a campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.PaginatedListResponse'
+      summary: List deliveries for a campaign
+      tags:
+      - deliveries
+    post:
+      consumes:
+      - application/json
+      description: Create deliveries for a campaign
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        type: string
+      - description: Deliveries to create
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateCampaignDeliveriesRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/admin.CreateCampaignDeliveriesResponse'
+      summary: Create deliveries for a campaign
+      tags:
+      - deliveries
+  /campaigns/{campaignID}/deliveries/{deliveryID}:
+    get:
+      description: Get a delivery by ID
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Delivery'
+      summary: Get a delivery by ID
+      tags:
+      - deliveries
+  /campaigns/{campaignID}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update campaign status
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        type: string
+      - description: Status update
+        in: body
+        name: statusUpdate
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateCampaignStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Update campaign status
+      tags:
+      - campaigns
+  /lists:
+    get:
+      description: List all mailing lists
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - collectionFormat: csv
+        description: Tags to filter by
+        in: query
+        items:
+          type: string
+        name: tags[]
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.PaginatedListResponse'
+      summary: List all mailing lists
+      tags:
+      - lists
+    post:
+      consumes:
+      - application/json
+      description: Create a new mailing list
+      parameters:
+      - description: List to create
+        in: body
+        name: list
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.List'
+      summary: Create a new mailing list
+      tags:
+      - lists
+  /lists/{listID}:
+    delete:
+      description: Delete a mailing list
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.DeleteResponse'
+      summary: Delete a mailing list
+      tags:
+      - lists
+    get:
+      description: Get a mailing list by ID
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.List'
+      summary: Get a mailing list by ID
+      tags:
+      - lists
+    put:
+      consumes:
+      - application/json
+      description: Update a mailing list
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: List to update
+        in: body
+        name: list
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.List'
+      summary: Update a mailing list
+      tags:
+      - lists
+  /lists/{listID}/subscribers:
+    get:
+      description: List subscribers
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.PaginatedListResponse'
+      summary: List subscribers
+      tags:
+      - subscribers
+    post:
+      consumes:
+      - application/json
+      description: Add subscribers to a list
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: Subscribers to add
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateSubscribersRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/admin.EmptyResponse'
+      summary: Add subscribers to a list
+      tags:
+      - subscribers
+  /subscribers:
+    get:
+      description: List subscribers
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.PaginatedListResponse'
+      summary: List subscribers
+      tags:
+      - subscribers
+  /subscribers/{subscriberID}:
+    delete:
+      description: Delete a subscriber
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: subscriberID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.DeleteResponse'
+      summary: Delete a subscriber
+      tags:
+      - subscribers
+    get:
+      description: Get a subscriber by ID
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: subscriberID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Subscriber'
+      summary: Get a subscriber by ID
+      tags:
+      - subscribers
+    put:
+      consumes:
+      - application/json
+      description: Update a subscriber
+      parameters:
+      - description: Subscriber ID
+        in: path
+        name: subscriberID
+        required: true
+        type: string
+      - description: Subscriber to update
+        in: body
+        name: subscriber
+        required: true
+        schema:
+          $ref: '#/definitions/admin.UpdateSubscriberRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Subscriber'
+      summary: Update a subscriber
+      tags:
+      - subscribers
+  /tx:
+    post:
+      consumes:
+      - application/json
+      description: Create a new transactional delivery
+      parameters:
+      - description: Transactional delivery to create
+        in: body
+        name: delivery
+        required: true
+        schema:
+          $ref: '#/definitions/admin.CreateTransactionalDeliveryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Delivery'
+      summary: Create a new transactional delivery
+      tags:
+      - deliveries
+  /tx/{deliveryID}:
+    get:
+      description: Get a delivery by ID
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Delivery'
+      summary: Get a delivery by ID
+      tags:
+      - deliveries
+swagger: "2.0"

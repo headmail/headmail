@@ -28,6 +28,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 	if err := db.AutoMigrate(
 		&List{},
 		&Subscriber{},
+		&SubscriberList{},
 		&Campaign{},
 		&Delivery{},
 		&DeliveryEvent{},
