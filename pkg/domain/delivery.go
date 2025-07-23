@@ -9,6 +9,8 @@ type Delivery struct {
 	Name       string                 `json:"name"`                  // Recipient's name
 	Email      string                 `json:"email"`                 // Recipient's email
 	Subject    string                 `json:"subject"`               // Actual sent subject
+	BodyHTML   string                 `json:"body_html"`             // HTML body
+	BodyText   string                 `json:"body_text"`             // Text body
 	MessageID  *string                `json:"message_id,omitempty"`  // SMTP Message ID
 	Data       map[string]interface{} `json:"data"`                  // Individual data for templates
 	Headers    map[string]string      `json:"headers"`               // Individual headers

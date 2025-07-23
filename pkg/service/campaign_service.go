@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
-	"github.com/headmail/headmail/pkg/api/admin/dto"
+	"github.com/headmail/headmail/pkg/template"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 )
@@ -23,10 +24,11 @@ type CampaignServiceProvider interface {
 
 // CampaignService provides business logic for campaign management.
 type CampaignService struct {
-	repo           repository.CampaignRepository
-	listRepo       repository.ListRepository
-	subscriberRepo repository.SubscriberRepository
-	deliveryRepo   repository.DeliveryRepository
+	repo            repository.CampaignRepository
+	listRepo        repository.ListRepository
+	subscriberRepo  repository.SubscriberRepository
+	deliveryRepo    repository.DeliveryRepository
+	templateService *template.Service
 }
 
 // NewCampaignService creates a new CampaignService.
@@ -35,12 +37,14 @@ func NewCampaignService(
 	listRepo repository.ListRepository,
 	subscriberRepo repository.SubscriberRepository,
 	deliveryRepo repository.DeliveryRepository,
+	templateService *template.Service,
 ) *CampaignService {
 	return &CampaignService{
-		repo:           repo,
-		listRepo:       listRepo,
-		subscriberRepo: subscriberRepo,
-		deliveryRepo:   deliveryRepo,
+		repo:            repo,
+		listRepo:        listRepo,
+		subscriberRepo:  subscriberRepo,
+		deliveryRepo:    deliveryRepo,
+		templateService: templateService,
 	}
 }
 
@@ -113,9 +117,16 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 			if processedEmails[individual.Email] {
 				continue
 			}
-			delivery := s.createDeliveryFromCampaign(campaign, individual.Name, individual.Email, req.ScheduledAt)
-			delivery.Data = individual.Data
-			delivery.Headers = individual.Headers
+
+			headersAsInterface := make(map[string]interface{})
+			for k, v := range individual.Headers {
+				headersAsInterface[k] = v
+			}
+
+			delivery, err := s.createDeliveryFromCampaign(campaign, individual.Name, individual.Email, req.ScheduledAt, individual.Data, headersAsInterface)
+			if err != nil {
+				return 0, err // Or handle error more gracefully
+			}
 			deliveries = append(deliveries, delivery)
 			processedEmails[individual.Email] = true
 		}
@@ -138,7 +149,10 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 			if processedEmails[subscriber.Email] {
 				continue
 			}
-			delivery := s.createDeliveryFromCampaign(campaign, subscriber.Name, subscriber.Email, req.ScheduledAt)
+			delivery, err := s.createDeliveryFromCampaign(campaign, subscriber.Name, subscriber.Email, req.ScheduledAt, nil, nil)
+			if err != nil {
+				return 0, err // Or handle error more gracefully
+			}
 			deliveries = append(deliveries, delivery)
 			processedEmails[subscriber.Email] = true
 		}
@@ -156,20 +170,69 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 	return len(deliveries), nil
 }
 
-func (s *CampaignService) createDeliveryFromCampaign(campaign *domain.Campaign, name, email string, scheduledAt *int64) *domain.Delivery {
+func (s *CampaignService) createDeliveryFromCampaign(campaign *domain.Campaign, name, email string, scheduledAt *int64, individualData, individualHeaders map[string]interface{}) (*domain.Delivery, error) {
 	deliveryID := uuid.New().String()
 	campaignID := campaign.ID
-	return &domain.Delivery{
+
+	// Prepare data for templating
+	templateData := make(map[string]interface{})
+	for k, v := range campaign.Data {
+		templateData[k] = v
+	}
+	if individualData != nil {
+		for k, v := range individualData {
+			templateData[k] = v
+		}
+	}
+	templateData["deliveryId"] = deliveryID
+	templateData["name"] = name
+	templateData["email"] = email
+
+	// Render subject
+	renderedSubject, err := s.templateService.Render(campaign.Subject, templateData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Render HTML content
+	renderedHTML, err := s.templateService.Render(campaign.TemplateHTML, templateData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Render text content
+	renderedText, err := s.templateService.Render(campaign.TemplateText, templateData)
+	if err != nil {
+		return nil, err
+	}
+
+	// Prepare headers
+	finalHeaders := make(map[string]string)
+	for k, v := range campaign.Headers {
+		finalHeaders[k] = v
+	}
+	if individualHeaders != nil {
+		for k, v := range individualHeaders {
+			if val, ok := v.(string); ok {
+				finalHeaders[k] = val
+			}
+		}
+	}
+
+	delivery := &domain.Delivery{
 		ID:          deliveryID,
 		CampaignID:  &campaignID,
 		Type:        "campaign",
 		Status:      "scheduled",
 		Name:        name,
 		Email:       email,
-		Subject:     campaign.Subject, // This will be templated later
-		Data:        campaign.Data,
-		Headers:     campaign.Headers,
+		Subject:     renderedSubject,
+		BodyHTML:    renderedHTML,
+		BodyText:    renderedText,
+		Data:        templateData,
+		Headers:     finalHeaders,
 		Tags:        campaign.Tags,
 		ScheduledAt: scheduledAt,
 	}
+	return delivery, nil
 }

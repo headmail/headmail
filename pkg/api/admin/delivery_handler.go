@@ -2,9 +2,10 @@ package admin
 
 import (
 	"encoding/json"
-	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"net/http"
 	"strconv"
+
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/headmail/headmail/pkg/domain"
@@ -14,57 +15,22 @@ import (
 
 // DeliveryHandler handles HTTP requests for deliveries.
 type DeliveryHandler struct {
-	service         service.DeliveryServiceProvider
-	campaignService service.CampaignServiceProvider
+	service service.DeliveryServiceProvider
 }
 
 // NewDeliveryHandler creates a new DeliveryHandler.
-func NewDeliveryHandler(service service.DeliveryServiceProvider, campaignService service.CampaignServiceProvider) *DeliveryHandler {
-	return &DeliveryHandler{service: service, campaignService: campaignService}
+func NewDeliveryHandler(service service.DeliveryServiceProvider) *DeliveryHandler {
+	return &DeliveryHandler{service: service}
 }
 
 // RegisterRoutes registers the delivery routes to the router.
 func (h *DeliveryHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/campaigns/{campaignID}", func(r chi.Router) {
-		r.Post("/deliveries", h.createCampaignDeliveries)
 		r.Get("/deliveries", h.listCampaignDeliveries)
 		r.Get("/deliveries/{deliveryID}", h.getDelivery)
-
 	})
 	r.Post("/tx", h.createTransactionalDelivery)
 	r.Get("/tx/{deliveryID}", h.getDelivery)
-}
-
-// @Summary Create deliveries for a campaign
-// @Description Create deliveries for a campaign
-// @Tags deliveries
-// @Accept  json
-// @Produce  json
-// @Param   campaignID  path  string  true  "Campaign ID"
-// @Param   request  body  CreateCampaignDeliveriesRequest  true  "Deliveries to create"
-// @Success 202 {object} CreateCampaignDeliveriesResponse
-// @Router /campaigns/{campaignID}/deliveries [post]
-func (h *DeliveryHandler) createCampaignDeliveries(w http.ResponseWriter, r *http.Request) {
-	campaignID := chi.URLParam(r, "campaignID") // campaignID is used to associate deliveries
-	var req dto.CreateDeliveriesRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	count, err := h.campaignService.CreateDeliveries(r.Context(), campaignID, &req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &dto.CreateDeliveriesResponse{
-		Status:            "scheduled",
-		ScheduledAt:       req.ScheduledAt,
-		DeliveriesCreated: count,
-	}
-
-	writeJson(w, http.StatusCreated, resp)
 }
 
 // @Summary List deliveries for a campaign

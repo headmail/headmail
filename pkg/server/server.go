@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/headmail/headmail/pkg/template"
 	"log"
 	"net/http"
 
@@ -71,12 +72,14 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 	}
 
 	// Initialize services
+	templateService := template.NewService()
 	srv.listService = service.NewListService(srv.db.ListRepository(), srv.db.SubscriberRepository())
 	srv.campaignService = service.NewCampaignService(
 		srv.db.CampaignRepository(),
 		srv.db.ListRepository(),
 		srv.db.SubscriberRepository(),
 		srv.db.DeliveryRepository(),
+		templateService,
 	)
 	srv.deliveryService = service.NewDeliveryService(srv.db.DeliveryRepository())
 
@@ -98,7 +101,7 @@ func (s *Server) registerAdminRoutes() {
 
 	listHandler := admin.NewListHandler(s.listService)
 	campaignHandler := admin.NewCampaignHandler(s.campaignService)
-	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService, s.campaignService)
+	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService)
 	subscriberHandler := admin.NewSubscriberHandler(s.listService)
 
 	s.adminRouter.Route("/api", func(r chi.Router) {
