@@ -56,6 +56,28 @@ definitions:
           type: string
         type: object
     type: object
+  admin.CreateDeliveriesRequest:
+    properties:
+      individuals:
+        items:
+          $ref: '#/definitions/admin.Individual'
+        type: array
+      lists:
+        items:
+          type: string
+        type: array
+      scheduled_at:
+        type: integer
+    type: object
+  admin.CreateDeliveriesResponse:
+    properties:
+      deliveries_created:
+        type: integer
+      scheduled_at:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+    type: object
   admin.CreateListRequest:
     properties:
       description:
@@ -113,6 +135,22 @@ definitions:
         type: string
     type: object
   admin.EmptyResponse:
+    type: object
+  admin.Individual:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      listId:
+        type: string
+      name:
+        type: string
     type: object
   admin.PaginatedListResponse:
     properties:

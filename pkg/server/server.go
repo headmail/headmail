@@ -72,7 +72,12 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 
 	// Initialize services
 	srv.listService = service.NewListService(srv.db.ListRepository(), srv.db.SubscriberRepository())
-	srv.campaignService = service.NewCampaignService(srv.db.CampaignRepository())
+	srv.campaignService = service.NewCampaignService(
+		srv.db.CampaignRepository(),
+		srv.db.ListRepository(),
+		srv.db.SubscriberRepository(),
+		srv.db.DeliveryRepository(),
+	)
 	srv.deliveryService = service.NewDeliveryService(srv.db.DeliveryRepository())
 
 	// Register routes

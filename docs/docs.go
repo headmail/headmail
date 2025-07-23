@@ -910,6 +910,40 @@ const docTemplate = `{
                 }
             }
         },
+        "admin.CreateDeliveriesRequest": {
+            "type": "object",
+            "properties": {
+                "individuals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.Individual"
+                    }
+                },
+                "lists": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scheduled_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "admin.CreateDeliveriesResponse": {
+            "type": "object",
+            "properties": {
+                "deliveries_created": {
+                    "type": "integer"
+                },
+                "scheduled_at": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.CampaignStatus"
+                }
+            }
+        },
         "admin.CreateListRequest": {
             "type": "object",
             "properties": {
@@ -998,6 +1032,30 @@ const docTemplate = `{
         },
         "admin.EmptyResponse": {
             "type": "object"
+        },
+        "admin.Individual": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "email": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "listId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
         },
         "admin.PaginatedListResponse": {
             "type": "object",
