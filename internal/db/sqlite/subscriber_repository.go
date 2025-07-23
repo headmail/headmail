@@ -206,6 +206,45 @@ func (r *subscriberRepository) List(ctx context.Context, filter repository.Subsc
 	return subscribers, int(total), nil
 }
 
+func (r *subscriberRepository) ListStream(ctx context.Context, filter repository.SubscriberFilter) (chan *domain.Subscriber, error) {
+	db := extractTx(ctx, r.db)
+	query := db.WithContext(ctx).Model(&Subscriber{}).Preload("Lists")
+
+	if filter.ListID != "" {
+		query = query.Joins("JOIN subscriber_lists on subscribers.id = subscriber_lists.subscriber_id").
+			Where("subscriber_lists.list_id = ?", filter.ListID)
+		if filter.ListStatus != "" {
+			query = query.Where("subscriber_lists.status = ?", filter.ListStatus)
+		}
+	}
+	if filter.Status != "" {
+		query = query.Where("subscribers.status = ?", filter.Status)
+	}
+	if filter.Search != "" {
+		query = query.Where("subscribers.email LIKE ? OR subscribers.name LIKE ?", "%"+filter.Search+"%", "%"+filter.Search+"%")
+	}
+
+	rows, err := query.Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan *domain.Subscriber, 1)
+	go func() {
+		defer close(ch)
+		defer rows.Close()
+		for rows.Next() {
+			row := &domain.Subscriber{}
+			if err = db.ScanRows(rows, row); err != nil {
+				break
+			}
+			ch <- row
+		}
+	}()
+
+	return ch, nil
+}
+
 func (r *subscriberRepository) BulkUpsert(ctx context.Context, subscribers []*domain.Subscriber) error {
 	db := extractTx(ctx, r.db)
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

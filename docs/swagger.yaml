@@ -1,130 +1,12 @@
 basePath: /api
 definitions:
-  admin.CreateCampaignDeliveriesRequest:
-    properties:
-      individuals:
-        items:
-          $ref: '#/definitions/domain.Subscriber'
-        type: array
-      lists:
-        items:
-          type: string
-        type: array
-      scheduled_at:
-        type: integer
-    type: object
-  admin.CreateCampaignDeliveriesResponse:
-    properties:
-      deliveries_created:
-        type: integer
-      scheduled_at:
-        type: integer
-      status:
-        type: string
-    type: object
-  admin.CreateCampaignRequest:
-    properties:
-      data:
-        additionalProperties: true
-        type: object
-      from_email:
-        type: string
-      from_name:
-        type: string
-      headers:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      scheduled_at:
-        type: integer
-      status:
-        $ref: '#/definitions/domain.CampaignStatus'
-      subject:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-      template_html:
-        type: string
-      template_text:
-        type: string
-      utm_params:
-        additionalProperties:
-          type: string
-        type: object
-    type: object
-  admin.CreateDeliveriesRequest:
-    properties:
-      individuals:
-        items:
-          $ref: '#/definitions/admin.Individual'
-        type: array
-      lists:
-        items:
-          type: string
-        type: array
-      scheduled_at:
-        type: integer
-    type: object
-  admin.CreateDeliveriesResponse:
-    properties:
-      deliveries_created:
-        type: integer
-      scheduled_at:
-        type: integer
-      status:
-        $ref: '#/definitions/domain.CampaignStatus'
-    type: object
-  admin.CreateListRequest:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-    type: object
-  admin.CreateSubscriberRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      status:
-        $ref: '#/definitions/domain.SubscriberStatus'
-    type: object
   admin.CreateSubscribersRequest:
     properties:
       append:
         type: boolean
       subscribers:
         items:
-          $ref: '#/definitions/admin.CreateSubscriberRequest'
-        type: array
-    type: object
-  admin.CreateTransactionalDeliveryRequest:
-    properties:
-      data:
-        additionalProperties: true
-        type: object
-      email:
-        type: string
-      headers:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      subject:
-        type: string
-      tags:
-        items:
-          type: string
+          $ref: '#/definitions/dto.CreateSubscriberRequest'
         type: array
     type: object
   admin.DeleteResponse:
@@ -135,22 +17,6 @@ definitions:
         type: string
     type: object
   admin.EmptyResponse:
-    type: object
-  admin.Individual:
-    properties:
-      data:
-        additionalProperties: true
-        type: object
-      email:
-        type: string
-      headers:
-        additionalProperties:
-          type: string
-        type: object
-      listId:
-        type: string
-      name:
-        type: string
     type: object
   admin.PaginatedListResponse:
     properties:
@@ -167,64 +33,10 @@ definitions:
       total:
         type: integer
     type: object
-  admin.UpdateCampaignRequest:
-    properties:
-      data:
-        additionalProperties: true
-        type: object
-      from_email:
-        type: string
-      from_name:
-        type: string
-      headers:
-        additionalProperties:
-          type: string
-        type: object
-      name:
-        type: string
-      scheduled_at:
-        type: integer
-      status:
-        $ref: '#/definitions/domain.CampaignStatus'
-      subject:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-      template_html:
-        type: string
-      template_text:
-        type: string
-      utm_params:
-        additionalProperties:
-          type: string
-        type: object
-    type: object
   admin.UpdateCampaignStatusRequest:
     properties:
       status:
         $ref: '#/definitions/domain.CampaignStatus'
-    type: object
-  admin.UpdateListRequest:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-    type: object
-  admin.UpdateSubscriberRequest:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-      status:
-        $ref: '#/definitions/domain.SubscriberStatus'
     type: object
   domain.Campaign:
     properties:
@@ -289,6 +101,9 @@ definitions:
       template_html:
         description: HTML template
         type: string
+      template_id:
+        description: Optional template ID
+        type: string
       template_text:
         description: Plain text template
         type: string
@@ -319,6 +134,12 @@ definitions:
     - CampaignStatusCancelled
   domain.Delivery:
     properties:
+      body_html:
+        description: HTML body
+        type: string
+      body_text:
+        description: Text body
+        type: string
       bounce_count:
         description: Number of bounces
         type: integer
@@ -371,8 +192,9 @@ definitions:
         description: Time of sending
         type: integer
       status:
+        allOf:
+        - $ref: '#/definitions/domain.DeliveryStatus'
         description: scheduled, sending, sent, delivered, failed, bounced
-        type: string
       subject:
         description: Actual sent subject
         type: string
@@ -382,9 +204,34 @@ definitions:
           type: string
         type: array
       type:
+        allOf:
+        - $ref: '#/definitions/domain.DeliveryType'
         description: campaign, transactional
-        type: string
     type: object
+  domain.DeliveryStatus:
+    enum:
+    - scheduled
+    - sending
+    - sent
+    - delivered
+    - failed
+    - bounced
+    type: string
+    x-enum-varnames:
+    - DeliveryStatusScheduled
+    - DeliveryStatusSending
+    - DeliveryStatusSent
+    - DeliveryStatusDelivered
+    - DeliveryStatusFailed
+    - DeliveryStatusBounced
+  domain.DeliveryType:
+    enum:
+    - campaign
+    - transaction
+    type: string
+    x-enum-varnames:
+    - DeliveryTypeCampaign
+    - DeliveryTypeTransaction
   domain.List:
     properties:
       created_at:
@@ -478,6 +325,209 @@ definitions:
     x-enum-varnames:
     - SubscriberStatusEnabled
     - SubscriberStatusDisabled
+  domain.Template:
+    properties:
+      body_html:
+        description: HTML content of the template
+        type: string
+      body_text:
+        description: Text content of the template
+        type: string
+      created_at:
+        description: Unix timestamp seconds
+        type: integer
+      id:
+        description: UUID
+        type: string
+      name:
+        description: Template name
+        type: string
+      updated_at:
+        description: Unix timestamp seconds
+        type: integer
+    type: object
+  dto.CreateCampaignRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      from_email:
+        type: string
+      from_name:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      scheduled_at:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+      subject:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      template_html:
+        type: string
+      template_text:
+        type: string
+      utm_params:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  dto.CreateDeliveriesRequest:
+    properties:
+      individuals:
+        items:
+          $ref: '#/definitions/dto.Individual'
+        type: array
+      lists:
+        items:
+          type: string
+        type: array
+      scheduled_at:
+        type: integer
+    type: object
+  dto.CreateDeliveriesResponse:
+    properties:
+      deliveries_created:
+        type: integer
+      scheduled_at:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+    type: object
+  dto.CreateListRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.CreateSubscriberRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/domain.SubscriberStatus'
+    type: object
+  dto.CreateTemplateRequest:
+    properties:
+      body_html:
+        type: string
+      body_text:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.CreateTransactionalDeliveryRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      subject:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.Individual:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      email:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+    type: object
+  dto.UpdateCampaignRequest:
+    properties:
+      data:
+        additionalProperties: true
+        type: object
+      from_email:
+        type: string
+      from_name:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      scheduled_at:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.CampaignStatus'
+      subject:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      template_html:
+        type: string
+      template_text:
+        type: string
+      utm_params:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  dto.UpdateListRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  dto.UpdateSubscriberRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      status:
+        $ref: '#/definitions/domain.SubscriberStatus'
+    type: object
+  dto.UpdateTemplateRequest:
+    properties:
+      body_html:
+        type: string
+      body_text:
+        type: string
+      name:
+        type: string
+    type: object
 info:
   contact:
     email: dev@headmail.io
@@ -540,7 +590,7 @@ paths:
         name: campaign
         required: true
         schema:
-          $ref: '#/definitions/admin.CreateCampaignRequest'
+          $ref: '#/definitions/dto.CreateCampaignRequest'
       produces:
       - application/json
       responses:
@@ -603,7 +653,7 @@ paths:
         name: campaign
         required: true
         schema:
-          $ref: '#/definitions/admin.UpdateCampaignRequest'
+          $ref: '#/definitions/dto.UpdateCampaignRequest'
       produces:
       - application/json
       responses:
@@ -656,17 +706,17 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/admin.CreateCampaignDeliveriesRequest'
+          $ref: '#/definitions/dto.CreateDeliveriesRequest'
       produces:
       - application/json
       responses:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/admin.CreateCampaignDeliveriesResponse'
+            $ref: '#/definitions/dto.CreateDeliveriesResponse'
       summary: Create deliveries for a campaign
       tags:
-      - deliveries
+      - campaigns
   /campaigns/{campaignID}/deliveries/{deliveryID}:
     get:
       description: Get a delivery by ID
@@ -754,7 +804,7 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/admin.CreateListRequest'
+          $ref: '#/definitions/dto.CreateListRequest'
       produces:
       - application/json
       responses:
@@ -817,7 +867,7 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/admin.UpdateListRequest'
+          $ref: '#/definitions/dto.UpdateListRequest'
       produces:
       - application/json
       responses:
@@ -966,7 +1016,7 @@ paths:
         name: subscriber
         required: true
         schema:
-          $ref: '#/definitions/admin.UpdateSubscriberRequest'
+          $ref: '#/definitions/dto.UpdateSubscriberRequest'
       produces:
       - application/json
       responses:
@@ -977,6 +1027,112 @@ paths:
       summary: Update a subscriber
       tags:
       - subscribers
+  /templates:
+    get:
+      description: List all templates
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.PaginatedListResponse'
+      summary: List all templates
+      tags:
+      - templates
+    post:
+      consumes:
+      - application/json
+      description: Create a new template
+      parameters:
+      - description: Template to create
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.Template'
+      summary: Create a new template
+      tags:
+      - templates
+  /templates/{templateID}:
+    delete:
+      description: Delete a template
+      parameters:
+      - description: Template ID
+        in: path
+        name: templateID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/admin.DeleteResponse'
+      summary: Delete a template
+      tags:
+      - templates
+    get:
+      description: Get a template by ID
+      parameters:
+      - description: Template ID
+        in: path
+        name: templateID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Template'
+      summary: Get a template by ID
+      tags:
+      - templates
+    put:
+      consumes:
+      - application/json
+      description: Update a template
+      parameters:
+      - description: Template ID
+        in: path
+        name: templateID
+        required: true
+        type: string
+      - description: Template to update
+        in: body
+        name: template
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Template'
+      summary: Update a template
+      tags:
+      - templates
   /tx:
     post:
       consumes:
@@ -988,7 +1144,7 @@ paths:
         name: delivery
         required: true
         schema:
-          $ref: '#/definitions/admin.CreateTransactionalDeliveryRequest'
+          $ref: '#/definitions/dto.CreateTransactionalDeliveryRequest'
       produces:
       - application/json
       responses:

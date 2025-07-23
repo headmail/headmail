@@ -1,11 +1,29 @@
 package domain
 
+type DeliveryType string
+
+const (
+	DeliveryTypeCampaign    DeliveryType = "campaign"
+	DeliveryTypeTransaction DeliveryType = "transaction"
+)
+
+type DeliveryStatus string
+
+const (
+	DeliveryStatusScheduled DeliveryStatus = "scheduled"
+	DeliveryStatusSending   DeliveryStatus = "sending"
+	DeliveryStatusSent      DeliveryStatus = "sent"
+	DeliveryStatusDelivered DeliveryStatus = "delivered"
+	DeliveryStatusFailed    DeliveryStatus = "failed"
+	DeliveryStatusBounced   DeliveryStatus = "bounced"
+)
+
 // Delivery represents a single email delivery.
 type Delivery struct {
 	ID         string                 `json:"id"`                    // UUID
 	CampaignID *string                `json:"campaign_id,omitempty"` // Campaign ID (nullable for transactional)
-	Type       string                 `json:"type"`                  // campaign, transactional
-	Status     string                 `json:"status"`                // scheduled, sending, sent, delivered, failed, bounced
+	Type       DeliveryType           `json:"type"`                  // campaign, transactional
+	Status     DeliveryStatus         `json:"status"`                // scheduled, sending, sent, delivered, failed, bounced
 	Name       string                 `json:"name"`                  // Recipient's name
 	Email      string                 `json:"email"`                 // Recipient's email
 	Subject    string                 `json:"subject"`               // Actual sent subject

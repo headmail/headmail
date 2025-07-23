@@ -67,7 +67,7 @@ func (h *DeliveryHandler) listCampaignDeliveries(w http.ResponseWriter, r *http.
 		return
 	}
 
-	resp := PaginatedListResponse{
+	resp := &PaginatedListResponse{
 		Data: deliveries,
 		Pagination: PaginationResponse{
 			Page:  page,
@@ -76,8 +76,7 @@ func (h *DeliveryHandler) listCampaignDeliveries(w http.ResponseWriter, r *http.
 		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	writeJson(w, http.StatusOK, resp)
 }
 
 // @Summary Get a delivery by ID
@@ -97,8 +96,7 @@ func (h *DeliveryHandler) getDelivery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(delivery)
+	writeJson(w, http.StatusOK, delivery)
 }
 
 // @Summary Create a new transactional delivery
@@ -106,7 +104,7 @@ func (h *DeliveryHandler) getDelivery(w http.ResponseWriter, r *http.Request) {
 // @Tags deliveries
 // @Accept  json
 // @Produce  json
-// @Param   delivery  body  CreateTransactionalDeliveryRequest  true  "Transactional delivery to create"
+// @Param   delivery  body  dto.CreateTransactionalDeliveryRequest  true  "Transactional delivery to create"
 // @Success 201 {object} domain.Delivery
 // @Router /tx [post]
 func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +129,5 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(delivery)
+	writeJson(w, http.StatusCreated, delivery)
 }

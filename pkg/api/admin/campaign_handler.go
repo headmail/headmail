@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	dto2 "github.com/headmail/headmail/pkg/api/admin/dto"
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/headmail/headmail/pkg/domain"
@@ -48,11 +48,11 @@ func (h *CampaignHandler) RegisterRoutes(r chi.Router) {
 // @Tags campaigns
 // @Accept  json
 // @Produce  json
-// @Param   campaign  body  CreateCampaignRequest  true  "Campaign to create"
+// @Param   campaign  body  dto.CreateCampaignRequest  true  "Campaign to create"
 // @Success 201 {object} domain.Campaign
 // @Router /campaigns [post]
 func (h *CampaignHandler) createCampaign(w http.ResponseWriter, r *http.Request) {
-	var req dto2.CreateCampaignRequest
+	var req dto.CreateCampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -106,13 +106,13 @@ func (h *CampaignHandler) getCampaign(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param   campaignID  path  string  true  "Campaign ID"
-// @Param   campaign  body  UpdateCampaignRequest  true  "Campaign to update"
+// @Param   campaign  body  dto.UpdateCampaignRequest  true  "Campaign to update"
 // @Success 200 {object} domain.Campaign
 // @Router /campaigns/{campaignID} [put]
 func (h *CampaignHandler) updateCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignID")
 
-	var req dto2.UpdateCampaignRequest
+	var req dto.UpdateCampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -256,7 +256,7 @@ func (h *CampaignHandler) updateCampaignStatus(w http.ResponseWriter, r *http.Re
 // @Router /campaigns/{campaignID}/deliveries [post]
 func (h *CampaignHandler) createCampaignDeliveries(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignID")
-	var req dto2.CreateDeliveriesRequest
+	var req dto.CreateDeliveriesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -268,7 +268,7 @@ func (h *CampaignHandler) createCampaignDeliveries(w http.ResponseWriter, r *htt
 		return
 	}
 
-	resp := &dto2.CreateDeliveriesResponse{
+	resp := &dto.CreateDeliveriesResponse{
 		Status:            "scheduled",
 		ScheduledAt:       req.ScheduledAt,
 		DeliveriesCreated: count,

@@ -114,7 +114,7 @@ func (h *SubscriberHandler) getSubscriber(w http.ResponseWriter, r *http.Request
 // @Accept  json
 // @Produce  json
 // @Param   subscriberID  path  string  true  "Subscriber ID"
-// @Param   subscriber  body  UpdateSubscriberRequest  true  "Subscriber to update"
+// @Param   subscriber  body  dto.UpdateSubscriberRequest  true  "Subscriber to update"
 // @Success 200 {object} domain.Subscriber
 // @Router /subscribers/{subscriberID} [put]
 func (h *SubscriberHandler) updateSubscriber(w http.ResponseWriter, r *http.Request) {

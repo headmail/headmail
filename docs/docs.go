@@ -101,7 +101,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateCampaignRequest"
+                            "$ref": "#/definitions/dto.CreateCampaignRequest"
                         }
                     }
                 ],
@@ -169,7 +169,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateCampaignRequest"
+                            "$ref": "#/definitions/dto.UpdateCampaignRequest"
                         }
                     }
                 ],
@@ -259,7 +259,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "deliveries"
+                    "campaigns"
                 ],
                 "summary": "Create deliveries for a campaign",
                 "parameters": [
@@ -276,7 +276,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateCampaignDeliveriesRequest"
+                            "$ref": "#/definitions/dto.CreateDeliveriesRequest"
                         }
                     }
                 ],
@@ -284,7 +284,7 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateCampaignDeliveriesResponse"
+                            "$ref": "#/definitions/dto.CreateDeliveriesResponse"
                         }
                     }
                 }
@@ -425,7 +425,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateListRequest"
+                            "$ref": "#/definitions/dto.CreateListRequest"
                         }
                     }
                 ],
@@ -493,7 +493,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateListRequest"
+                            "$ref": "#/definitions/dto.UpdateListRequest"
                         }
                     }
                 ],
@@ -719,7 +719,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateSubscriberRequest"
+                            "$ref": "#/definitions/dto.UpdateSubscriberRequest"
                         }
                     }
                 ],
@@ -760,6 +760,167 @@ const docTemplate = `{
                 }
             }
         },
+        "/templates": {
+            "get": {
+                "description": "List all templates",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "List all templates",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Create a new template",
+                "parameters": [
+                    {
+                        "description": "Template to create",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Template"
+                        }
+                    }
+                }
+            }
+        },
+        "/templates/{templateID}": {
+            "get": {
+                "description": "Get a template by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Get a template by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Template"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update a template",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Update a template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Template to update",
+                        "name": "template",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Template"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete a template",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "templates"
+                ],
+                "summary": "Delete a template",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Template ID",
+                        "name": "templateID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/admin.DeleteResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/tx": {
             "post": {
                 "description": "Create a new transactional delivery",
@@ -780,7 +941,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateTransactionalDeliveryRequest"
+                            "$ref": "#/definitions/dto.CreateTransactionalDeliveryRequest"
                         }
                     }
                 ],
@@ -825,156 +986,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "admin.CreateCampaignDeliveriesRequest": {
-            "type": "object",
-            "properties": {
-                "individuals": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.Subscriber"
-                    }
-                },
-                "lists": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "scheduled_at": {
-                    "type": "integer"
-                }
-            }
-        },
-        "admin.CreateCampaignDeliveriesResponse": {
-            "type": "object",
-            "properties": {
-                "deliveries_created": {
-                    "type": "integer"
-                },
-                "scheduled_at": {
-                    "type": "integer"
-                },
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "admin.CreateCampaignRequest": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "from_email": {
-                    "type": "string"
-                },
-                "from_name": {
-                    "type": "string"
-                },
-                "headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "scheduled_at": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/domain.CampaignStatus"
-                },
-                "subject": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "template_html": {
-                    "type": "string"
-                },
-                "template_text": {
-                    "type": "string"
-                },
-                "utm_params": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "admin.CreateDeliveriesRequest": {
-            "type": "object",
-            "properties": {
-                "individuals": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/admin.Individual"
-                    }
-                },
-                "lists": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "scheduled_at": {
-                    "type": "integer"
-                }
-            }
-        },
-        "admin.CreateDeliveriesResponse": {
-            "type": "object",
-            "properties": {
-                "deliveries_created": {
-                    "type": "integer"
-                },
-                "scheduled_at": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/domain.CampaignStatus"
-                }
-            }
-        },
-        "admin.CreateListRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "admin.CreateSubscriberRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/domain.SubscriberStatus"
-                }
-            }
-        },
         "admin.CreateSubscribersRequest": {
             "type": "object",
             "properties": {
@@ -984,37 +995,7 @@ const docTemplate = `{
                 "subscribers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/admin.CreateSubscriberRequest"
-                    }
-                }
-            }
-        },
-        "admin.CreateTransactionalDeliveryRequest": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "email": {
-                    "type": "string"
-                },
-                "headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "subject": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/dto.CreateSubscriberRequest"
                     }
                 }
             }
@@ -1032,30 +1013,6 @@ const docTemplate = `{
         },
         "admin.EmptyResponse": {
             "type": "object"
-        },
-        "admin.Individual": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "email": {
-                    "type": "string"
-                },
-                "headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "listId": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
         },
         "admin.PaginatedListResponse": {
             "type": "object",
@@ -1080,93 +1037,11 @@ const docTemplate = `{
                 }
             }
         },
-        "admin.UpdateCampaignRequest": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "additionalProperties": true
-                },
-                "from_email": {
-                    "type": "string"
-                },
-                "from_name": {
-                    "type": "string"
-                },
-                "headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "name": {
-                    "type": "string"
-                },
-                "scheduled_at": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/domain.CampaignStatus"
-                },
-                "subject": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "template_html": {
-                    "type": "string"
-                },
-                "template_text": {
-                    "type": "string"
-                },
-                "utm_params": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "admin.UpdateCampaignStatusRequest": {
             "type": "object",
             "properties": {
                 "status": {
                     "$ref": "#/definitions/domain.CampaignStatus"
-                }
-            }
-        },
-        "admin.UpdateListRequest": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "admin.UpdateSubscriberRequest": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/domain.SubscriberStatus"
                 }
             }
         },
@@ -1259,6 +1134,10 @@ const docTemplate = `{
                     "description": "HTML template",
                     "type": "string"
                 },
+                "template_id": {
+                    "description": "Optional template ID",
+                    "type": "string"
+                },
                 "template_text": {
                     "description": "Plain text template",
                     "type": "string"
@@ -1298,6 +1177,14 @@ const docTemplate = `{
         "domain.Delivery": {
             "type": "object",
             "properties": {
+                "body_html": {
+                    "description": "HTML body",
+                    "type": "string"
+                },
+                "body_text": {
+                    "description": "Text body",
+                    "type": "string"
+                },
                 "bounce_count": {
                     "description": "Number of bounces",
                     "type": "integer"
@@ -1368,7 +1255,11 @@ const docTemplate = `{
                 },
                 "status": {
                     "description": "scheduled, sending, sent, delivered, failed, bounced",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.DeliveryStatus"
+                        }
+                    ]
                 },
                 "subject": {
                     "description": "Actual sent subject",
@@ -1383,9 +1274,43 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "campaign, transactional",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/domain.DeliveryType"
+                        }
+                    ]
                 }
             }
+        },
+        "domain.DeliveryStatus": {
+            "type": "string",
+            "enum": [
+                "scheduled",
+                "sending",
+                "sent",
+                "delivered",
+                "failed",
+                "bounced"
+            ],
+            "x-enum-varnames": [
+                "DeliveryStatusScheduled",
+                "DeliveryStatusSending",
+                "DeliveryStatusSent",
+                "DeliveryStatusDelivered",
+                "DeliveryStatusFailed",
+                "DeliveryStatusBounced"
+            ]
+        },
+        "domain.DeliveryType": {
+            "type": "string",
+            "enum": [
+                "campaign",
+                "transaction"
+            ],
+            "x-enum-varnames": [
+                "DeliveryTypeCampaign",
+                "DeliveryTypeTransaction"
+            ]
         },
         "domain.List": {
             "type": "object",
@@ -1514,6 +1439,312 @@ const docTemplate = `{
                 "SubscriberStatusEnabled",
                 "SubscriberStatusDisabled"
             ]
+        },
+        "domain.Template": {
+            "type": "object",
+            "properties": {
+                "body_html": {
+                    "description": "HTML content of the template",
+                    "type": "string"
+                },
+                "body_text": {
+                    "description": "Text content of the template",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "Unix timestamp seconds",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "UUID",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Template name",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "description": "Unix timestamp seconds",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateCampaignRequest": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "from_email": {
+                    "type": "string"
+                },
+                "from_name": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.CampaignStatus"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "template_html": {
+                    "type": "string"
+                },
+                "template_text": {
+                    "type": "string"
+                },
+                "utm_params": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.CreateDeliveriesRequest": {
+            "type": "object",
+            "properties": {
+                "individuals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Individual"
+                    }
+                },
+                "lists": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "scheduled_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CreateDeliveriesResponse": {
+            "type": "object",
+            "properties": {
+                "deliveries_created": {
+                    "type": "integer"
+                },
+                "scheduled_at": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.CampaignStatus"
+                }
+            }
+        },
+        "dto.CreateListRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.CreateSubscriberRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.SubscriberStatus"
+                }
+            }
+        },
+        "dto.CreateTemplateRequest": {
+            "type": "object",
+            "properties": {
+                "body_html": {
+                    "type": "string"
+                },
+                "body_text": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateTransactionalDeliveryRequest": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "email": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.Individual": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "email": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateCampaignRequest": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "from_email": {
+                    "type": "string"
+                },
+                "from_name": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "scheduled_at": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.CampaignStatus"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "template_html": {
+                    "type": "string"
+                },
+                "template_text": {
+                    "type": "string"
+                },
+                "utm_params": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.UpdateListRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.UpdateSubscriberRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.SubscriberStatus"
+                }
+            }
+        },
+        "dto.UpdateTemplateRequest": {
+            "type": "object",
+            "properties": {
+                "body_html": {
+                    "type": "string"
+                },
+                "body_text": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`

@@ -39,6 +39,7 @@ type SubscriberList struct {
 type Campaign struct {
 	ID             string                `gorm:"column:id;primaryKey"`
 	Name           string                `gorm:"column:name"`
+	TemplateID     *string               `gorm:"column:template_id"`
 	Status         domain.CampaignStatus `gorm:"column:status"`
 	FromName       string                `gorm:"column:from_name"`
 	FromEmail      string                `gorm:"column:from_email"`
@@ -64,26 +65,26 @@ type Campaign struct {
 
 // Delivery is the GORM model for a delivery.
 type Delivery struct {
-	ID            string  `gorm:"column:id;primaryKey"`
-	CampaignID    *string `gorm:"column:campaign_id"`
-	Type          string  `gorm:"column:type"`
-	Status        string  `gorm:"column:status"`
-	Name          string  `gorm:"column:name"`
-	Email         string  `gorm:"column:email"`
-	Subject       string  `gorm:"column:subject"`
-	MessageID     *string `gorm:"column:message_id"`
-	Data          JSON    `gorm:"column:data;type:json"`
-	Headers       JSON    `gorm:"column:headers;type:json"`
-	Tags          JSON    `gorm:"column:tags;type:json"`
-	CreatedAt     int64   `gorm:"column:created_at"`
-	ScheduledAt   *int64  `gorm:"column:scheduled_at"`
-	SentAt        *int64  `gorm:"column:sent_at"`
-	OpenedAt      *int64  `gorm:"column:opened_at"`
-	FailedAt      *int64  `gorm:"column:failed_at"`
-	FailureReason *string `gorm:"column:failure_reason"`
-	OpenCount     int     `gorm:"column:open_count"`
-	ClickCount    int     `gorm:"column:click_count"`
-	BounceCount   int     `gorm:"column:bounce_count"`
+	ID            string                `gorm:"column:id;primaryKey"`
+	CampaignID    *string               `gorm:"column:campaign_id"`
+	Type          domain.DeliveryType   `gorm:"column:type"`
+	Status        domain.DeliveryStatus `gorm:"column:status"`
+	Name          string                `gorm:"column:name"`
+	Email         string                `gorm:"column:email"`
+	Subject       string                `gorm:"column:subject"`
+	MessageID     *string               `gorm:"column:message_id"`
+	Data          JSON                  `gorm:"column:data;type:json"`
+	Headers       JSON                  `gorm:"column:headers;type:json"`
+	Tags          JSON                  `gorm:"column:tags;type:json"`
+	CreatedAt     int64                 `gorm:"column:created_at"`
+	ScheduledAt   *int64                `gorm:"column:scheduled_at"`
+	SentAt        *int64                `gorm:"column:sent_at"`
+	OpenedAt      *int64                `gorm:"column:opened_at"`
+	FailedAt      *int64                `gorm:"column:failed_at"`
+	FailureReason *string               `gorm:"column:failure_reason"`
+	OpenCount     int                   `gorm:"column:open_count"`
+	ClickCount    int                   `gorm:"column:click_count"`
+	BounceCount   int                   `gorm:"column:bounce_count"`
 }
 
 // DeliveryEvent is the GORM model for a delivery event.
@@ -96,4 +97,14 @@ type DeliveryEvent struct {
 	IPAddress  *string          `gorm:"column:ip_address"`
 	URL        *string          `gorm:"column:url"`
 	CreatedAt  int64            `gorm:"column:created_at"`
+}
+
+// Template is the GORM model for a template.
+type Template struct {
+	ID        string `gorm:"column:id;primaryKey"`
+	CreatedAt int64  `gorm:"column:created_at"`
+	UpdatedAt int64  `gorm:"column:updated_at"`
+	Name      string `gorm:"column:name"`
+	BodyHTML  string `gorm:"column:body_html"`
+	BodyText  string `gorm:"column:body_text"`
 }

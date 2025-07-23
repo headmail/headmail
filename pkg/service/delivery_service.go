@@ -24,8 +24,10 @@ type DeliveryService struct {
 }
 
 // NewDeliveryService creates a new DeliveryService.
-func NewDeliveryService(repo repository.DeliveryRepository) *DeliveryService {
-	return &DeliveryService{repo: repo}
+func NewDeliveryService(db repository.DB) *DeliveryService {
+	return &DeliveryService{
+		repo: db.DeliveryRepository(),
+	}
 }
 
 // CreateDelivery creates a new delivery.

@@ -13,6 +13,7 @@ type DB interface {
 	SubscriberRepository() SubscriberRepository
 	CampaignRepository() CampaignRepository
 	DeliveryRepository() DeliveryRepository
+	TemplateRepository() TemplateRepository
 }
 
 // Transactionable defines the interface for transaction management.
@@ -41,6 +42,7 @@ type SubscriberRepository interface {
 	Update(ctx context.Context, subscriber *domain.Subscriber) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter SubscriberFilter, pagination Pagination) ([]*domain.Subscriber, int, error)
+	ListStream(ctx context.Context, filter SubscriberFilter) (chan *domain.Subscriber, error)
 	BulkUpsert(ctx context.Context, subscribers []*domain.Subscriber) error
 }
 
@@ -62,6 +64,15 @@ type DeliveryRepository interface {
 	List(ctx context.Context, filter DeliveryFilter, pagination Pagination) ([]*domain.Delivery, int, error)
 	GetByCampaignID(ctx context.Context, campaignID string, pagination Pagination) ([]*domain.Delivery, int, error)
 	UpdateStatus(ctx context.Context, id string, status string) error
+}
+
+// TemplateRepository defines the interface for template storage.
+type TemplateRepository interface {
+	Create(ctx context.Context, template *domain.Template) error
+	GetByID(ctx context.Context, id string) (*domain.Template, error)
+	Update(ctx context.Context, template *domain.Template) error
+	Delete(ctx context.Context, id string) error
+	List(ctx context.Context, pagination Pagination) ([]*domain.Template, int, error)
 }
 
 // Filter Types

@@ -32,6 +32,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 		&Campaign{},
 		&Delivery{},
 		&DeliveryEvent{},
+		&Template{},
 	); err != nil {
 		return nil, err
 	}
@@ -54,6 +55,10 @@ func (db *DB) CampaignRepository() repository.CampaignRepository {
 
 func (db *DB) DeliveryRepository() repository.DeliveryRepository {
 	return NewDeliveryRepository(db.DB)
+}
+
+func (db *DB) TemplateRepository() repository.TemplateRepository {
+	return NewTemplateRepository(db.DB)
 }
 
 func (db *DB) Begin(ctx context.Context) (context.Context, error) {

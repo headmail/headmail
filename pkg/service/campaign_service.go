@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/headmail/headmail/pkg/template"
 	"time"
+
+	"github.com/headmail/headmail/pkg/template"
 
 	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/api/admin/dto"
@@ -24,26 +25,27 @@ type CampaignServiceProvider interface {
 
 // CampaignService provides business logic for campaign management.
 type CampaignService struct {
+	db              repository.DB
 	repo            repository.CampaignRepository
 	listRepo        repository.ListRepository
 	subscriberRepo  repository.SubscriberRepository
 	deliveryRepo    repository.DeliveryRepository
+	templateRepo    repository.TemplateRepository
 	templateService *template.Service
 }
 
 // NewCampaignService creates a new CampaignService.
 func NewCampaignService(
-	repo repository.CampaignRepository,
-	listRepo repository.ListRepository,
-	subscriberRepo repository.SubscriberRepository,
-	deliveryRepo repository.DeliveryRepository,
+	db repository.DB,
 	templateService *template.Service,
 ) *CampaignService {
 	return &CampaignService{
-		repo:            repo,
-		listRepo:        listRepo,
-		subscriberRepo:  subscriberRepo,
-		deliveryRepo:    deliveryRepo,
+		db:              db,
+		repo:            db.CampaignRepository(),
+		listRepo:        db.ListRepository(),
+		subscriberRepo:  db.SubscriberRepository(),
+		deliveryRepo:    db.DeliveryRepository(),
+		templateRepo:    db.TemplateRepository(),
 		templateService: templateService,
 	}
 }
@@ -91,86 +93,91 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 		return 0, err
 	}
 
+	// If TemplateID is provided, fetch the template and override HTML/Text
+	if campaign.TemplateID != nil && *campaign.TemplateID != "" {
+		tmpl, err := s.templateRepo.GetByID(ctx, *campaign.TemplateID)
+		if err != nil {
+			return 0, err
+		}
+		campaign.TemplateHTML = tmpl.BodyHTML
+		campaign.TemplateText = tmpl.BodyText
+	}
+
 	// 2. Prepare deliveries
 	deliveries := make([]*domain.Delivery, 0)
 	processedEmails := make(map[string]bool)
 
-	// TODO: Transaction
-
-	// 3. Handle individuals
-	if len(req.Individuals) > 0 {
-		subscribersToUpsert := make([]*domain.Subscriber, len(req.Individuals))
-		for i, individual := range req.Individuals {
-			subscribersToUpsert[i] = &domain.Subscriber{
-				Email:  individual.Email,
-				Name:   individual.Name,
-				Status: "active",
+	return repository.Transactional1(s.db, ctx, func(txCtx context.Context) (int, error) {
+		// 3. Handle individuals
+		if len(req.Individuals) > 0 {
+			subscribersToUpsert := make([]*domain.Subscriber, len(req.Individuals))
+			for i, individual := range req.Individuals {
+				subscribersToUpsert[i] = &domain.Subscriber{
+					Email:  individual.Email,
+					Name:   individual.Name,
+					Status: "active",
+				}
+				// TODO: Consider how to handle ListID for individual subscribers.
+				// For now, we are not associating them with a list directly in this step.
 			}
-			// TODO: Consider how to handle ListID for individual subscribers.
-			// For now, we are not associating them with a list directly in this step.
+			if err := s.subscriberRepo.BulkUpsert(ctx, subscribersToUpsert); err != nil {
+				return 0, err
+			}
+
+			for _, individual := range req.Individuals {
+				if processedEmails[individual.Email] {
+					continue
+				}
+
+				delivery, err := s.createDeliveryFromCampaign(ctx, campaign, individual.Name, individual.Email, req.ScheduledAt, individual.Data, individual.Headers)
+				if err != nil {
+					return 0, err // Or handle error more gracefully
+				}
+				deliveries = append(deliveries, delivery)
+				processedEmails[individual.Email] = true
+			}
 		}
-		if err := s.subscriberRepo.BulkUpsert(ctx, subscribersToUpsert); err != nil {
-			return 0, err
-		}
 
-		for _, individual := range req.Individuals {
-			if processedEmails[individual.Email] {
-				continue
-			}
-
-			headersAsInterface := make(map[string]interface{})
-			for k, v := range individual.Headers {
-				headersAsInterface[k] = v
-			}
-
-			delivery, err := s.createDeliveryFromCampaign(campaign, individual.Name, individual.Email, req.ScheduledAt, individual.Data, headersAsInterface)
+		// 4. Handle lists
+		for _, listID := range req.Lists {
+			// TODO: stream
+			// We need to fetch all subscribers for the list.
+			// Assuming a large list, this should be paginated, but for now, we'll fetch all.
+			subscribers, err := s.subscriberRepo.ListStream(ctx, repository.SubscriberFilter{
+				ListID:     listID,
+				Status:     domain.SubscriberStatusEnabled,
+				ListStatus: domain.SubscriberListStatusConfirmed,
+			})
 			if err != nil {
-				return 0, err // Or handle error more gracefully
+				return 0, err
 			}
-			deliveries = append(deliveries, delivery)
-			processedEmails[individual.Email] = true
-		}
-	}
-
-	// 4. Handle lists
-	for _, listID := range req.Lists {
-		// TODO: stream
-		// We need to fetch all subscribers for the list.
-		// Assuming a large list, this should be paginated, but for now, we'll fetch all.
-		subscribers, _, err := s.subscriberRepo.List(ctx, repository.SubscriberFilter{
-			ListID:     listID,
-			Status:     domain.SubscriberStatusEnabled,
-			ListStatus: domain.SubscriberListStatusConfirmed,
-		}, repository.Pagination{Limit: -1})
-		if err != nil {
-			return 0, err
-		}
-		for _, subscriber := range subscribers {
-			if processedEmails[subscriber.Email] {
-				continue
+			for subscriber := range subscribers {
+				if processedEmails[subscriber.Email] {
+					continue
+				}
+				delivery, err := s.createDeliveryFromCampaign(ctx, campaign, subscriber.Name, subscriber.Email, req.ScheduledAt, nil, nil)
+				if err != nil {
+					return 0, err // Or handle error more gracefully
+				}
+				deliveries = append(deliveries, delivery)
+				processedEmails[subscriber.Email] = true
 			}
-			delivery, err := s.createDeliveryFromCampaign(campaign, subscriber.Name, subscriber.Email, req.ScheduledAt, nil, nil)
-			if err != nil {
-				return 0, err // Or handle error more gracefully
+		}
+
+		// 5. Create deliveries in DB
+		// TODO: This should be a transactional operation.
+		for _, delivery := range deliveries {
+			if err := s.deliveryRepo.Create(ctx, delivery); err != nil {
+				// TODO: Handle partial creation
+				return 0, err
 			}
-			deliveries = append(deliveries, delivery)
-			processedEmails[subscriber.Email] = true
 		}
-	}
 
-	// 5. Create deliveries in DB
-	// TODO: This should be a transactional operation.
-	for _, delivery := range deliveries {
-		if err := s.deliveryRepo.Create(ctx, delivery); err != nil {
-			// TODO: Handle partial creation
-			return 0, err
-		}
-	}
-
-	return len(deliveries), nil
+		return len(deliveries), nil
+	})
 }
 
-func (s *CampaignService) createDeliveryFromCampaign(campaign *domain.Campaign, name, email string, scheduledAt *int64, individualData, individualHeaders map[string]interface{}) (*domain.Delivery, error) {
+func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campaign *domain.Campaign, name, email string, scheduledAt *int64, individualData map[string]interface{}, individualHeaders map[string]string) (*domain.Delivery, error) {
 	deliveryID := uuid.New().String()
 	campaignID := campaign.ID
 
@@ -213,17 +220,15 @@ func (s *CampaignService) createDeliveryFromCampaign(campaign *domain.Campaign, 
 	}
 	if individualHeaders != nil {
 		for k, v := range individualHeaders {
-			if val, ok := v.(string); ok {
-				finalHeaders[k] = val
-			}
+			finalHeaders[k] = v
 		}
 	}
 
 	delivery := &domain.Delivery{
 		ID:          deliveryID,
 		CampaignID:  &campaignID,
-		Type:        "campaign",
-		Status:      "scheduled",
+		Type:        domain.DeliveryTypeCampaign,
+		Status:      domain.DeliveryStatusScheduled,
 		Name:        name,
 		Email:       email,
 		Subject:     renderedSubject,

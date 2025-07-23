@@ -40,7 +40,7 @@ func (h *ListHandler) RegisterRoutes(r chi.Router) {
 // @Tags lists
 // @Accept  json
 // @Produce  json
-// @Param   list  body  CreateListRequest  true  "List to create"
+// @Param   list  body  dto.CreateListRequest  true  "List to create"
 // @Success 201 {object} domain.List
 // @Router /lists [post]
 func (h *ListHandler) createList(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +96,7 @@ func (h *ListHandler) getList(w http.ResponseWriter, r *http.Request) {
 // @Accept  json
 // @Produce  json
 // @Param   listID  path  string  true  "List ID"
-// @Param   list  body  UpdateListRequest  true  "List to update"
+// @Param   list  body  dto.UpdateListRequest  true  "List to update"
 // @Success 200 {object} domain.List
 // @Router /lists/{listID} [put]
 func (h *ListHandler) updateList(w http.ResponseWriter, r *http.Request) {

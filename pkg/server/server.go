@@ -3,9 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/headmail/headmail/pkg/template"
 	"log"
 	"net/http"
+
+	"github.com/headmail/headmail/pkg/template"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -33,6 +34,7 @@ type Server struct {
 	listService     service.ListServiceProvider
 	campaignService service.CampaignServiceProvider
 	deliveryService service.DeliveryServiceProvider
+	templateService service.TemplateServiceProvider
 }
 
 // Option defines a function that configures a Server.
@@ -73,15 +75,13 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 
 	// Initialize services
 	templateService := template.NewService()
-	srv.listService = service.NewListService(srv.db.ListRepository(), srv.db.SubscriberRepository())
+	srv.listService = service.NewListService(srv.db)
 	srv.campaignService = service.NewCampaignService(
-		srv.db.CampaignRepository(),
-		srv.db.ListRepository(),
-		srv.db.SubscriberRepository(),
-		srv.db.DeliveryRepository(),
+		srv.db,
 		templateService,
 	)
-	srv.deliveryService = service.NewDeliveryService(srv.db.DeliveryRepository())
+	srv.deliveryService = service.NewDeliveryService(srv.db)
+	srv.templateService = service.NewTemplateService(srv.db)
 
 	// Register routes
 	srv.registerMiddlewares()
@@ -103,12 +103,14 @@ func (s *Server) registerAdminRoutes() {
 	campaignHandler := admin.NewCampaignHandler(s.campaignService)
 	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService)
 	subscriberHandler := admin.NewSubscriberHandler(s.listService)
+	templateHandler := admin.NewTemplateHandler(s.templateService)
 
 	s.adminRouter.Route("/api", func(r chi.Router) {
 		listHandler.RegisterRoutes(r)
 		campaignHandler.RegisterRoutes(r)
 		deliveryHandler.RegisterRoutes(r)
 		subscriberHandler.RegisterRoutes(r)
+		templateHandler.RegisterRoutes(r)
 	})
 }
 

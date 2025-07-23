@@ -27,13 +27,18 @@ type ListServiceProvider interface {
 
 // ListService provides business logic for list management.
 type ListService struct {
+	db             repository.DB
 	listRepo       repository.ListRepository
 	subscriberRepo repository.SubscriberRepository
 }
 
 // NewListService creates a new ListService.
-func NewListService(listRepo repository.ListRepository, subscriberRepo repository.SubscriberRepository) *ListService {
-	return &ListService{listRepo: listRepo, subscriberRepo: subscriberRepo}
+func NewListService(db repository.DB) *ListService {
+	return &ListService{
+		db:             db,
+		listRepo:       db.ListRepository(),
+		subscriberRepo: db.SubscriberRepository(),
+	}
 }
 
 // CreateList creates a new mailing list.
@@ -83,7 +88,9 @@ func (s *ListService) AddSubscribers(ctx context.Context, subscribers []*domain.
 		s.UpdatedAt = now
 	}
 
-	return s.subscriberRepo.BulkUpsert(ctx, subscribers)
+	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
+		return s.subscriberRepo.BulkUpsert(txCtx, subscribers)
+	})
 }
 
 // GetSubscriber retrieves a subscriber by its ID.
