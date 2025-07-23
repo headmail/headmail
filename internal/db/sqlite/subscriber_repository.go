@@ -172,21 +172,30 @@ func (r *subscriberRepository) List(ctx context.Context, filter repository.Subsc
 	if filter.ListID != "" {
 		query = query.Joins("JOIN subscriber_lists on subscribers.id = subscriber_lists.subscriber_id").
 			Where("subscriber_lists.list_id = ?", filter.ListID)
+		if filter.ListStatus != "" {
+			query = query.Where("subscriber_lists.status = ?", filter.ListStatus)
+		}
 	}
 	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
+		query = query.Where("subscribers.status = ?", filter.Status)
 	}
 	if filter.Search != "" {
-		query = query.Where("email LIKE ? OR name LIKE ?", "%"+filter.Search+"%", "%"+filter.Search+"%")
+		query = query.Where("subscribers.email LIKE ? OR subscribers.name LIKE ?", "%"+filter.Search+"%", "%"+filter.Search+"%")
 	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	offset := (pagination.Page - 1) * pagination.Limit
-	if err := query.Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
-		return nil, 0, err
+	if pagination.Limit > 0 {
+		offset := (pagination.Page - 1) * pagination.Limit
+		if err := query.Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
+			return nil, 0, err
+		}
+	} else {
+		if err := query.Find(&entities).Error; err != nil {
+			return nil, 0, err
+		}
 	}
 
 	var subscribers []*domain.Subscriber

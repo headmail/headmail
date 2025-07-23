@@ -1,4 +1,4 @@
-package admin
+package dto
 
 // CreateListRequest is the request for creating a list.
 type CreateListRequest struct {

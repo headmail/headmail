@@ -72,9 +72,10 @@ type ListFilter struct {
 }
 
 type SubscriberFilter struct {
-	ListID string `json:"list_id,omitempty"`
-	Status string `json:"status,omitempty"`
-	Search string `json:"search,omitempty"`
+	ListID     string                      `json:"list_id,omitempty"`
+	ListStatus domain.SubscriberListStatus `json:"list_status,omitempty"`
+	Status     domain.SubscriberStatus     `json:"status,omitempty"`
+	Search     string                      `json:"search,omitempty"`
 }
 
 type CampaignFilter struct {

@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/json"
 	"errors"
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"net/http"
 	"strconv"
 
@@ -38,8 +39,8 @@ func (h *SubscriberHandler) RegisterRoutes(r chi.Router) {
 
 // CreateSubscribersRequest is the request for creating subscribers.
 type CreateSubscribersRequest struct {
-	Subscribers []*CreateSubscriberRequest `json:"subscribers"`
-	Append      bool                       `json:"append"`
+	Subscribers []*dto.CreateSubscriberRequest `json:"subscribers"`
+	Append      bool                           `json:"append"`
 }
 
 type EmptyResponse struct{}
@@ -119,7 +120,7 @@ func (h *SubscriberHandler) getSubscriber(w http.ResponseWriter, r *http.Request
 func (h *SubscriberHandler) updateSubscriber(w http.ResponseWriter, r *http.Request) {
 	subscriberID := chi.URLParam(r, "subscriberID")
 
-	var req UpdateSubscriberRequest
+	var req dto.UpdateSubscriberRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -193,7 +194,7 @@ func (h *SubscriberHandler) listSubscribersOfList(w http.ResponseWriter, r *http
 
 	filter := repository.SubscriberFilter{
 		ListID: listID,
-		Status: r.URL.Query().Get("status"),
+		Status: domain.SubscriberStatus(r.URL.Query().Get("status")),
 		Search: r.URL.Query().Get("search"),
 	}
 	pagination := repository.Pagination{

@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/headmail/headmail/pkg/api/dto"
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 )
@@ -91,6 +91,8 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 	deliveries := make([]*domain.Delivery, 0)
 	processedEmails := make(map[string]bool)
 
+	// TODO: Transaction
+
 	// 3. Handle individuals
 	if len(req.Individuals) > 0 {
 		subscribersToUpsert := make([]*domain.Subscriber, len(req.Individuals))
@@ -121,12 +123,16 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 
 	// 4. Handle lists
 	for _, listID := range req.Lists {
+		// TODO: stream
 		// We need to fetch all subscribers for the list.
 		// Assuming a large list, this should be paginated, but for now, we'll fetch all.
-		subscribers, _, err := s.subscriberRepo.List(ctx, repository.SubscriberFilter{ListID: listID, Status: "active"}, repository.Pagination{Limit: -1})
+		subscribers, _, err := s.subscriberRepo.List(ctx, repository.SubscriberFilter{
+			ListID:     listID,
+			Status:     domain.SubscriberStatusEnabled,
+			ListStatus: domain.SubscriberListStatusConfirmed,
+		}, repository.Pagination{Limit: -1})
 		if err != nil {
-			// TODO: Handle error, maybe log and continue
-			continue
+			return 0, err
 		}
 		for _, subscriber := range subscribers {
 			if processedEmails[subscriber.Email] {

@@ -98,7 +98,7 @@ func (s *Server) registerAdminRoutes() {
 
 	listHandler := admin.NewListHandler(s.listService)
 	campaignHandler := admin.NewCampaignHandler(s.campaignService)
-	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService)
+	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService, s.campaignService)
 	subscriberHandler := admin.NewSubscriberHandler(s.listService)
 
 	s.adminRouter.Route("/api", func(r chi.Router) {

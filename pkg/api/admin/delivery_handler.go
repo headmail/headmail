@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"net/http"
 	"strconv"
 
@@ -13,12 +14,13 @@ import (
 
 // DeliveryHandler handles HTTP requests for deliveries.
 type DeliveryHandler struct {
-	service service.DeliveryServiceProvider
+	service         service.DeliveryServiceProvider
+	campaignService service.CampaignServiceProvider
 }
 
 // NewDeliveryHandler creates a new DeliveryHandler.
-func NewDeliveryHandler(service service.DeliveryServiceProvider) *DeliveryHandler {
-	return &DeliveryHandler{service: service}
+func NewDeliveryHandler(service service.DeliveryServiceProvider, campaignService service.CampaignServiceProvider) *DeliveryHandler {
+	return &DeliveryHandler{service: service, campaignService: campaignService}
 }
 
 // RegisterRoutes registers the delivery routes to the router.
@@ -33,20 +35,6 @@ func (h *DeliveryHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/tx/{deliveryID}", h.getDelivery)
 }
 
-// CreateCampaignDeliveriesRequest is the request for creating campaign deliveries.
-type CreateCampaignDeliveriesRequest struct {
-	Lists       []string             `json:"lists"`
-	Individuals []*domain.Subscriber `json:"individuals"`
-	ScheduledAt *int64               `json:"scheduled_at"`
-}
-
-// CreateCampaignDeliveriesResponse is the response for creating campaign deliveries.
-type CreateCampaignDeliveriesResponse struct {
-	Status            string `json:"status"`
-	ScheduledAt       *int64 `json:"scheduled_at,omitempty"`
-	DeliveriesCreated int    `json:"deliveries_created"`
-}
-
 // @Summary Create deliveries for a campaign
 // @Description Create deliveries for a campaign
 // @Tags deliveries
@@ -57,27 +45,26 @@ type CreateCampaignDeliveriesResponse struct {
 // @Success 202 {object} CreateCampaignDeliveriesResponse
 // @Router /campaigns/{campaignID}/deliveries [post]
 func (h *DeliveryHandler) createCampaignDeliveries(w http.ResponseWriter, r *http.Request) {
-	_ = chi.URLParam(r, "campaignID") // campaignID is used to associate deliveries
-	var req CreateCampaignDeliveriesRequest
+	campaignID := chi.URLParam(r, "campaignID") // campaignID is used to associate deliveries
+	var req dto.CreateDeliveriesRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// This is a simplified implementation.
-	// A real implementation would involve more complex logic in the service layer
-	// to fetch subscribers from lists and create deliveries for all of them.
-	deliveriesCreated := len(req.Individuals)
-
-	resp := CreateCampaignDeliveriesResponse{
-		Status:            "scheduled",
-		ScheduledAt:       req.ScheduledAt,
-		DeliveriesCreated: deliveriesCreated,
+	count, err := h.campaignService.CreateDeliveries(r.Context(), campaignID, &req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted) // 202 Accepted is more appropriate here
-	json.NewEncoder(w).Encode(resp)
+	resp := &dto.CreateDeliveriesResponse{
+		Status:            "scheduled",
+		ScheduledAt:       req.ScheduledAt,
+		DeliveriesCreated: count,
+	}
+
+	writeJson(w, http.StatusCreated, resp)
 }
 
 // @Summary List deliveries for a campaign
@@ -157,7 +144,7 @@ func (h *DeliveryHandler) getDelivery(w http.ResponseWriter, r *http.Request) {
 // @Success 201 {object} domain.Delivery
 // @Router /tx [post]
 func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *http.Request) {
-	var req CreateTransactionalDeliveryRequest
+	var req dto.CreateTransactionalDeliveryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

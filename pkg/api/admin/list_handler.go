@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"net/http"
 	"strconv"
 
@@ -43,7 +44,7 @@ func (h *ListHandler) RegisterRoutes(r chi.Router) {
 // @Success 201 {object} domain.List
 // @Router /lists [post]
 func (h *ListHandler) createList(w http.ResponseWriter, r *http.Request) {
-	var req CreateListRequest
+	var req dto.CreateListRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -101,7 +102,7 @@ func (h *ListHandler) getList(w http.ResponseWriter, r *http.Request) {
 func (h *ListHandler) updateList(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "listID")
 
-	var req UpdateListRequest
+	var req dto.UpdateListRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

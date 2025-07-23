@@ -1,4 +1,4 @@
-package admin
+package dto
 
 import "github.com/headmail/headmail/pkg/domain"
 
@@ -14,7 +14,6 @@ type CreateTransactionalDeliveryRequest struct {
 
 // Individual defines an individual recipient for a delivery.
 type Individual struct {
-	ListID  string                 `json:"listId"`
 	Name    string                 `json:"name"`
 	Email   string                 `json:"email"`
 	Data    map[string]interface{} `json:"data"`

@@ -2,11 +2,11 @@ package admin
 
 import (
 	"encoding/json"
+	dto2 "github.com/headmail/headmail/pkg/api/admin/dto"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/headmail/headmail/pkg/api/dto"
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service"
@@ -37,7 +37,6 @@ func (h *CampaignHandler) RegisterRoutes(r chi.Router) {
 			r.Put("/", h.updateCampaign)
 			r.Delete("/", h.deleteCampaign)
 			r.Patch("/status", h.updateCampaignStatus)
-			r.Post("/deliveries", h.createDeliveries)
 		})
 	})
 }
@@ -51,7 +50,7 @@ func (h *CampaignHandler) RegisterRoutes(r chi.Router) {
 // @Success 201 {object} domain.Campaign
 // @Router /campaigns [post]
 func (h *CampaignHandler) createCampaign(w http.ResponseWriter, r *http.Request) {
-	var req CreateCampaignRequest
+	var req dto2.CreateCampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -111,7 +110,7 @@ func (h *CampaignHandler) getCampaign(w http.ResponseWriter, r *http.Request) {
 func (h *CampaignHandler) updateCampaign(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignID")
 
-	var req UpdateCampaignRequest
+	var req dto2.UpdateCampaignRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -242,37 +241,4 @@ func (h *CampaignHandler) updateCampaignStatus(w http.ResponseWriter, r *http.Re
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-// @Summary Create deliveries for a campaign
-// @Description Create deliveries for a campaign
-// @Tags campaigns
-// @Accept  json
-// @Produce  json
-// @Param   campaignID  path  string  true  "Campaign ID"
-// @Param   deliveryRequest  body  CreateDeliveriesRequest  true  "Delivery request"
-// @Success 201 {object} CreateDeliveriesResponse
-// @Router /campaigns/{campaignID}/deliveries [post]
-func (h *CampaignHandler) createDeliveries(w http.ResponseWriter, r *http.Request) {
-	campaignID := chi.URLParam(r, "campaignID")
-
-	var req dto.CreateDeliveriesRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	count, err := h.service.CreateDeliveries(r.Context(), campaignID, &req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := &CreateDeliveriesResponse{
-		Status:            "scheduled",
-		ScheduledAt:       req.ScheduledAt,
-		DeliveriesCreated: count,
-	}
-
-	writeJson(w, http.StatusCreated, resp)
 }

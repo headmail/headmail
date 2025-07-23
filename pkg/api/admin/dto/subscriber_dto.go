@@ -1,4 +1,4 @@
-package admin
+package dto
 
 import "github.com/headmail/headmail/pkg/domain"
 
