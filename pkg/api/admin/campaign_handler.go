@@ -30,17 +30,13 @@ func NewCampaignHandler(service service.CampaignServiceProvider) *CampaignHandle
 
 // RegisterRoutes registers the campaign routes to the router.
 func (h *CampaignHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/campaigns", func(r chi.Router) {
-		r.Post("/", h.createCampaign)
-		r.Get("/", h.listCampaigns)
-		r.Route("/{campaignID}", func(r chi.Router) {
-			r.Get("/", h.getCampaign)
-			r.Put("/", h.updateCampaign)
-			r.Delete("/", h.deleteCampaign)
-			r.Patch("/status", h.updateCampaignStatus)
-			r.Post("/deliveries", h.createCampaignDeliveries)
-		})
-	})
+	r.Post("/campaigns", h.createCampaign)
+	r.Get("/campaigns", h.listCampaigns)
+	r.Get("/campaigns/{campaignID}", h.getCampaign)
+	r.Put("/campaigns/{campaignID}", h.updateCampaign)
+	r.Delete("/campaigns/{campaignID}", h.deleteCampaign)
+	r.Patch("/campaigns/{campaignID}/status", h.updateCampaignStatus)
+	r.Post("/campaigns/{campaignID}/deliveries", h.createCampaignDeliveries)
 }
 
 // @Summary Create a new campaign
@@ -174,7 +170,7 @@ func (h *CampaignHandler) deleteCampaign(w http.ResponseWriter, r *http.Request)
 // @Param   search  query  string  false  "Search term"
 // @Param   tags[]  query  []string  false  "Tags to filter by"
 // @Param   status[]  query  []string  false  "Status to filter by"
-// @Success 200 {object} PaginatedListResponse
+// @Success 200 {object} PaginatedListResponse[domain.Campaign]
 // @Router /campaigns [get]
 func (h *CampaignHandler) listCampaigns(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -207,7 +203,7 @@ func (h *CampaignHandler) listCampaigns(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	resp := PaginatedListResponse{
+	resp := &PaginatedListResponse[*domain.Campaign]{
 		Data: campaigns,
 		Pagination: PaginationResponse{
 			Page:  page,

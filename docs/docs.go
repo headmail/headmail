@@ -77,7 +77,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                            "$ref": "#/definitions/api_admin.PaginatedListResponse-domain_Campaign"
                         }
                     }
                 }
@@ -101,7 +101,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateCampaignRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest"
                         }
                     }
                 ],
@@ -169,7 +169,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateCampaignRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest"
                         }
                     }
                 ],
@@ -204,7 +204,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.DeleteResponse"
+                            "$ref": "#/definitions/api_admin.DeleteResponse"
                         }
                     }
                 }
@@ -245,7 +245,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                            "$ref": "#/definitions/api_admin.PaginatedListResponse-domain_Delivery"
                         }
                     }
                 }
@@ -276,7 +276,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateDeliveriesRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest"
                         }
                     }
                 ],
@@ -284,7 +284,7 @@ const docTemplate = `{
                     "202": {
                         "description": "Accepted",
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateDeliveriesResponse"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse"
                         }
                     }
                 }
@@ -346,7 +346,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.UpdateCampaignStatusRequest"
+                            "$ref": "#/definitions/api_admin.UpdateCampaignStatusRequest"
                         }
                     }
                 ],
@@ -401,7 +401,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                            "$ref": "#/definitions/api_admin.PaginatedListResponse-domain_List"
                         }
                     }
                 }
@@ -425,7 +425,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateListRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest"
                         }
                     }
                 ],
@@ -493,7 +493,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateListRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest"
                         }
                     }
                 ],
@@ -528,7 +528,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.DeleteResponse"
+                            "$ref": "#/definitions/api_admin.DeleteResponse"
                         }
                     }
                 }
@@ -574,7 +574,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                            "$ref": "#/definitions/api_admin.PaginatedListResponse-domain_Subscriber"
                         }
                     }
                 }
@@ -605,7 +605,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.CreateSubscribersRequest"
+                            "$ref": "#/definitions/api_admin.CreateSubscribersRequest"
                         }
                     }
                 ],
@@ -613,7 +613,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/admin.EmptyResponse"
+                            "$ref": "#/definitions/api_admin.EmptyResponse"
                         }
                     }
                 }
@@ -659,7 +659,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                            "$ref": "#/definitions/api_admin.PaginatedListResponse-domain_Subscriber"
                         }
                     }
                 }
@@ -719,7 +719,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateSubscriberRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest"
                         }
                     }
                 ],
@@ -754,7 +754,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.DeleteResponse"
+                            "$ref": "#/definitions/api_admin.DeleteResponse"
                         }
                     }
                 }
@@ -788,7 +788,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.PaginatedListResponse"
+                            "$ref": "#/definitions/api_admin.PaginatedListResponse-domain_Template"
                         }
                     }
                 }
@@ -812,7 +812,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateTemplateRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest"
                         }
                     }
                 ],
@@ -880,7 +880,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateTemplateRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest"
                         }
                     }
                 ],
@@ -915,7 +915,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/admin.DeleteResponse"
+                            "$ref": "#/definitions/api_admin.DeleteResponse"
                         }
                     }
                 }
@@ -941,7 +941,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateTransactionalDeliveryRequest"
+                            "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest"
                         }
                     }
                 ],
@@ -986,7 +986,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "admin.CreateSubscribersRequest": {
+        "api_admin.CreateSubscribersRequest": {
             "type": "object",
             "properties": {
                 "append": {
@@ -995,12 +995,12 @@ const docTemplate = `{
                 "subscribers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.CreateSubscriberRequest"
+                        "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest"
                     }
                 }
             }
         },
-        "admin.DeleteResponse": {
+        "api_admin.DeleteResponse": {
             "type": "object",
             "properties": {
                 "deleted": {
@@ -1011,19 +1011,80 @@ const docTemplate = `{
                 }
             }
         },
-        "admin.EmptyResponse": {
+        "api_admin.EmptyResponse": {
             "type": "object"
         },
-        "admin.PaginatedListResponse": {
+        "api_admin.PaginatedListResponse-domain_Campaign": {
             "type": "object",
             "properties": {
-                "data": {},
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Campaign"
+                    }
+                },
                 "pagination": {
-                    "$ref": "#/definitions/admin.PaginationResponse"
+                    "$ref": "#/definitions/api_admin.PaginationResponse"
                 }
             }
         },
-        "admin.PaginationResponse": {
+        "api_admin.PaginatedListResponse-domain_Delivery": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Delivery"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api_admin.PaginationResponse"
+                }
+            }
+        },
+        "api_admin.PaginatedListResponse-domain_List": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.List"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api_admin.PaginationResponse"
+                }
+            }
+        },
+        "api_admin.PaginatedListResponse-domain_Subscriber": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Subscriber"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api_admin.PaginationResponse"
+                }
+            }
+        },
+        "api_admin.PaginatedListResponse-domain_Template": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Template"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api_admin.PaginationResponse"
+                }
+            }
+        },
+        "api_admin.PaginationResponse": {
             "type": "object",
             "properties": {
                 "limit": {
@@ -1037,7 +1098,7 @@ const docTemplate = `{
                 }
             }
         },
-        "admin.UpdateCampaignStatusRequest": {
+        "api_admin.UpdateCampaignStatusRequest": {
             "type": "object",
             "properties": {
                 "status": {
@@ -1469,7 +1530,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateCampaignRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1520,13 +1581,13 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateDeliveriesRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest": {
             "type": "object",
             "properties": {
                 "individuals": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.Individual"
+                        "$ref": "#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.Individual"
                     }
                 },
                 "lists": {
@@ -1540,7 +1601,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateDeliveriesResponse": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse": {
             "type": "object",
             "properties": {
                 "deliveries_created": {
@@ -1554,7 +1615,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateListRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -1571,7 +1632,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateSubscriberRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1585,7 +1646,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateTemplateRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest": {
             "type": "object",
             "properties": {
                 "body_html": {
@@ -1599,7 +1660,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CreateTransactionalDeliveryRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1629,7 +1690,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.Individual": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.Individual": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1650,7 +1711,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateCampaignRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest": {
             "type": "object",
             "properties": {
                 "data": {
@@ -1701,7 +1762,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateListRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest": {
             "type": "object",
             "properties": {
                 "description": {
@@ -1718,7 +1779,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateSubscriberRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -1732,7 +1793,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateTemplateRequest": {
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest": {
             "type": "object",
             "properties": {
                 "body_html": {

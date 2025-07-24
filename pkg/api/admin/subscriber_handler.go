@@ -179,7 +179,7 @@ func (h *SubscriberHandler) deleteSubscriber(w http.ResponseWriter, r *http.Requ
 // @Param   limit  query  int  false  "Number of items per page"
 // @Param   status  query  string  false  "Filter by status"
 // @Param   search  query  string  false  "Search term"
-// @Success 200 {object} PaginatedListResponse
+// @Success 200 {object} PaginatedListResponse[domain.Subscriber]
 // @Router /subscribers [get]
 func (h *SubscriberHandler) listSubscribersOfList(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "listID")
@@ -208,7 +208,7 @@ func (h *SubscriberHandler) listSubscribersOfList(w http.ResponseWriter, r *http
 		return
 	}
 
-	resp := PaginatedListResponse{
+	resp := &PaginatedListResponse[*domain.Subscriber]{
 		Data: subscribers,
 		Pagination: PaginationResponse{
 			Page:  page,
@@ -227,7 +227,7 @@ func (h *SubscriberHandler) listSubscribersOfList(w http.ResponseWriter, r *http
 // @Param   limit  query  int  false  "Number of items per page"
 // @Param   status  query  string  false  "Filter by status"
 // @Param   search  query  string  false  "Search term"
-// @Success 200 {object} PaginatedListResponse
+// @Success 200 {object} PaginatedListResponse[domain.Subscriber]
 // @Router /subscribers [get]
 // @Router /lists/{listID}/subscribers [get]
 func (h *SubscriberHandler) listSubscribers(w http.ResponseWriter, r *http.Request) {

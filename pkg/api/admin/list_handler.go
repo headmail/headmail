@@ -161,7 +161,7 @@ func (h *ListHandler) deleteList(w http.ResponseWriter, r *http.Request) {
 // @Param   limit  query  int  false  "Number of items per page"
 // @Param   search  query  string  false  "Search term"
 // @Param   tags[]  query  []string  false  "Tags to filter by"
-// @Success 200 {object} PaginatedListResponse
+// @Success 200 {object} PaginatedListResponse[domain.List]
 // @Router /lists [get]
 func (h *ListHandler) listLists(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -197,7 +197,7 @@ func (h *ListHandler) listLists(w http.ResponseWriter, r *http.Request) {
 		list.SubscriberCount = count
 	}
 
-	resp := PaginatedListResponse{
+	resp := &PaginatedListResponse[*domain.List]{
 		Data: lists,
 		Pagination: PaginationResponse{
 			Page:  page,

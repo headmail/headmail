@@ -145,7 +145,7 @@ func (h *TemplateHandler) deleteTemplate(w http.ResponseWriter, r *http.Request)
 // @Produce  json
 // @Param   page  query  int  false  "Page number"
 // @Param   limit  query  int  false  "Number of items per page"
-// @Success 200 {object} PaginatedListResponse
+// @Success 200 {object} PaginatedListResponse[domain.Template]
 // @Router /templates [get]
 func (h *TemplateHandler) listTemplates(w http.ResponseWriter, r *http.Request) {
 	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
@@ -168,7 +168,7 @@ func (h *TemplateHandler) listTemplates(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	resp := PaginatedListResponse{
+	resp := &PaginatedListResponse[*domain.Template]{
 		Data: templates,
 		Pagination: PaginationResponse{
 			Page:  page,

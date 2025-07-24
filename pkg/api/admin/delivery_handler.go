@@ -25,10 +25,8 @@ func NewDeliveryHandler(service service.DeliveryServiceProvider) *DeliveryHandle
 
 // RegisterRoutes registers the delivery routes to the router.
 func (h *DeliveryHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/campaigns/{campaignID}", func(r chi.Router) {
-		r.Get("/deliveries", h.listCampaignDeliveries)
-		r.Get("/deliveries/{deliveryID}", h.getDelivery)
-	})
+	r.Get("/campaigns/{campaignID}/deliveries", h.listCampaignDeliveries)
+	r.Get("/campaigns/{campaignID}/deliveries/{deliveryID}", h.getDelivery)
 	r.Post("/tx", h.createTransactionalDelivery)
 	r.Get("/tx/{deliveryID}", h.getDelivery)
 }
@@ -40,7 +38,7 @@ func (h *DeliveryHandler) RegisterRoutes(r chi.Router) {
 // @Param   campaignID  path  string  true  "Campaign ID"
 // @Param   page  query  int  false  "Page number"
 // @Param   limit  query  int  false  "Number of items per page"
-// @Success 200 {object} PaginatedListResponse
+// @Success 200 {object} PaginatedListResponse[domain.Delivery]
 // @Router /campaigns/{campaignID}/deliveries [get]
 func (h *DeliveryHandler) listCampaignDeliveries(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignID")
@@ -67,7 +65,7 @@ func (h *DeliveryHandler) listCampaignDeliveries(w http.ResponseWriter, r *http.
 		return
 	}
 
-	resp := &PaginatedListResponse{
+	resp := &PaginatedListResponse[*domain.Delivery]{
 		Data: deliveries,
 		Pagination: PaginationResponse{
 			Page:  page,

@@ -8,8 +8,8 @@ type PaginationResponse struct {
 }
 
 // PaginatedListResponse is the response for a list of items with pagination.
-type PaginatedListResponse struct {
-	Data       interface{}        `json:"data"`
+type PaginatedListResponse[T any] struct {
+	Data       []T                `json:"data"`
 	Pagination PaginationResponse `json:"pagination"`
 }
 

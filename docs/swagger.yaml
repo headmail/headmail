@@ -1,30 +1,69 @@
 basePath: /api
 definitions:
-  admin.CreateSubscribersRequest:
+  api_admin.CreateSubscribersRequest:
     properties:
       append:
         type: boolean
       subscribers:
         items:
-          $ref: '#/definitions/dto.CreateSubscriberRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest'
         type: array
     type: object
-  admin.DeleteResponse:
+  api_admin.DeleteResponse:
     properties:
       deleted:
         type: boolean
       message:
         type: string
     type: object
-  admin.EmptyResponse:
+  api_admin.EmptyResponse:
     type: object
-  admin.PaginatedListResponse:
+  api_admin.PaginatedListResponse-domain_Campaign:
     properties:
-      data: {}
+      data:
+        items:
+          $ref: '#/definitions/domain.Campaign'
+        type: array
       pagination:
-        $ref: '#/definitions/admin.PaginationResponse'
+        $ref: '#/definitions/api_admin.PaginationResponse'
     type: object
-  admin.PaginationResponse:
+  api_admin.PaginatedListResponse-domain_Delivery:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/domain.Delivery'
+        type: array
+      pagination:
+        $ref: '#/definitions/api_admin.PaginationResponse'
+    type: object
+  api_admin.PaginatedListResponse-domain_List:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/domain.List'
+        type: array
+      pagination:
+        $ref: '#/definitions/api_admin.PaginationResponse'
+    type: object
+  api_admin.PaginatedListResponse-domain_Subscriber:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/domain.Subscriber'
+        type: array
+      pagination:
+        $ref: '#/definitions/api_admin.PaginationResponse'
+    type: object
+  api_admin.PaginatedListResponse-domain_Template:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/domain.Template'
+        type: array
+      pagination:
+        $ref: '#/definitions/api_admin.PaginationResponse'
+    type: object
+  api_admin.PaginationResponse:
     properties:
       limit:
         type: integer
@@ -33,7 +72,7 @@ definitions:
       total:
         type: integer
     type: object
-  admin.UpdateCampaignStatusRequest:
+  api_admin.UpdateCampaignStatusRequest:
     properties:
       status:
         $ref: '#/definitions/domain.CampaignStatus'
@@ -346,7 +385,7 @@ definitions:
         description: Unix timestamp seconds
         type: integer
     type: object
-  dto.CreateCampaignRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest:
     properties:
       data:
         additionalProperties: true
@@ -380,11 +419,11 @@ definitions:
           type: string
         type: object
     type: object
-  dto.CreateDeliveriesRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest:
     properties:
       individuals:
         items:
-          $ref: '#/definitions/dto.Individual'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.Individual'
         type: array
       lists:
         items:
@@ -393,7 +432,7 @@ definitions:
       scheduled_at:
         type: integer
     type: object
-  dto.CreateDeliveriesResponse:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse:
     properties:
       deliveries_created:
         type: integer
@@ -402,7 +441,7 @@ definitions:
       status:
         $ref: '#/definitions/domain.CampaignStatus'
     type: object
-  dto.CreateListRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest:
     properties:
       description:
         type: string
@@ -413,7 +452,7 @@ definitions:
           type: string
         type: array
     type: object
-  dto.CreateSubscriberRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest:
     properties:
       email:
         type: string
@@ -422,7 +461,7 @@ definitions:
       status:
         $ref: '#/definitions/domain.SubscriberStatus'
     type: object
-  dto.CreateTemplateRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest:
     properties:
       body_html:
         type: string
@@ -431,7 +470,7 @@ definitions:
       name:
         type: string
     type: object
-  dto.CreateTransactionalDeliveryRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest:
     properties:
       data:
         additionalProperties: true
@@ -451,7 +490,7 @@ definitions:
           type: string
         type: array
     type: object
-  dto.Individual:
+  github_com_headmail_headmail_pkg_api_admin_dto.Individual:
     properties:
       data:
         additionalProperties: true
@@ -465,7 +504,7 @@ definitions:
       name:
         type: string
     type: object
-  dto.UpdateCampaignRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest:
     properties:
       data:
         additionalProperties: true
@@ -499,7 +538,7 @@ definitions:
           type: string
         type: object
     type: object
-  dto.UpdateListRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest:
     properties:
       description:
         type: string
@@ -510,7 +549,7 @@ definitions:
           type: string
         type: array
     type: object
-  dto.UpdateSubscriberRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest:
     properties:
       email:
         type: string
@@ -519,7 +558,7 @@ definitions:
       status:
         $ref: '#/definitions/domain.SubscriberStatus'
     type: object
-  dto.UpdateTemplateRequest:
+  github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest:
     properties:
       body_html:
         type: string
@@ -576,7 +615,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.PaginatedListResponse'
+            $ref: '#/definitions/api_admin.PaginatedListResponse-domain_Campaign'
       summary: List all campaigns
       tags:
       - campaigns
@@ -590,7 +629,7 @@ paths:
         name: campaign
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateCampaignRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest'
       produces:
       - application/json
       responses:
@@ -616,7 +655,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.DeleteResponse'
+            $ref: '#/definitions/api_admin.DeleteResponse'
       summary: Delete a campaign
       tags:
       - campaigns
@@ -653,7 +692,7 @@ paths:
         name: campaign
         required: true
         schema:
-          $ref: '#/definitions/dto.UpdateCampaignRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest'
       produces:
       - application/json
       responses:
@@ -687,7 +726,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.PaginatedListResponse'
+            $ref: '#/definitions/api_admin.PaginatedListResponse-domain_Delivery'
       summary: List deliveries for a campaign
       tags:
       - deliveries
@@ -706,14 +745,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateDeliveriesRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest'
       produces:
       - application/json
       responses:
         "202":
           description: Accepted
           schema:
-            $ref: '#/definitions/dto.CreateDeliveriesResponse'
+            $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse'
       summary: Create deliveries for a campaign
       tags:
       - campaigns
@@ -752,7 +791,7 @@ paths:
         name: statusUpdate
         required: true
         schema:
-          $ref: '#/definitions/admin.UpdateCampaignStatusRequest'
+          $ref: '#/definitions/api_admin.UpdateCampaignStatusRequest'
       produces:
       - application/json
       responses:
@@ -790,7 +829,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.PaginatedListResponse'
+            $ref: '#/definitions/api_admin.PaginatedListResponse-domain_List'
       summary: List all mailing lists
       tags:
       - lists
@@ -804,7 +843,7 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateListRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest'
       produces:
       - application/json
       responses:
@@ -830,7 +869,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.DeleteResponse'
+            $ref: '#/definitions/api_admin.DeleteResponse'
       summary: Delete a mailing list
       tags:
       - lists
@@ -867,7 +906,7 @@ paths:
         name: list
         required: true
         schema:
-          $ref: '#/definitions/dto.UpdateListRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest'
       produces:
       - application/json
       responses:
@@ -904,7 +943,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.PaginatedListResponse'
+            $ref: '#/definitions/api_admin.PaginatedListResponse-domain_Subscriber'
       summary: List subscribers
       tags:
       - subscribers
@@ -923,14 +962,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/admin.CreateSubscribersRequest'
+          $ref: '#/definitions/api_admin.CreateSubscribersRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/admin.EmptyResponse'
+            $ref: '#/definitions/api_admin.EmptyResponse'
       summary: Add subscribers to a list
       tags:
       - subscribers
@@ -960,7 +999,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.PaginatedListResponse'
+            $ref: '#/definitions/api_admin.PaginatedListResponse-domain_Subscriber'
       summary: List subscribers
       tags:
       - subscribers
@@ -979,7 +1018,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.DeleteResponse'
+            $ref: '#/definitions/api_admin.DeleteResponse'
       summary: Delete a subscriber
       tags:
       - subscribers
@@ -1016,7 +1055,7 @@ paths:
         name: subscriber
         required: true
         schema:
-          $ref: '#/definitions/dto.UpdateSubscriberRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest'
       produces:
       - application/json
       responses:
@@ -1045,7 +1084,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.PaginatedListResponse'
+            $ref: '#/definitions/api_admin.PaginatedListResponse-domain_Template'
       summary: List all templates
       tags:
       - templates
@@ -1059,7 +1098,7 @@ paths:
         name: template
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateTemplateRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest'
       produces:
       - application/json
       responses:
@@ -1085,7 +1124,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/admin.DeleteResponse'
+            $ref: '#/definitions/api_admin.DeleteResponse'
       summary: Delete a template
       tags:
       - templates
@@ -1122,7 +1161,7 @@ paths:
         name: template
         required: true
         schema:
-          $ref: '#/definitions/dto.UpdateTemplateRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest'
       produces:
       - application/json
       responses:
@@ -1144,7 +1183,7 @@ paths:
         name: delivery
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateTransactionalDeliveryRequest'
+          $ref: '#/definitions/github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest'
       produces:
       - application/json
       responses:
