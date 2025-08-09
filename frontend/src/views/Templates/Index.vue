@@ -1,33 +1,92 @@
 <template>
-  <div>
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-2xl font-bold">Templates</h1>
-      <button @click="showCreateModal = true" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Create Template</button>
+  <div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">이메일 템플릿</h1>
+        <p class="text-gray-600 mt-1">이메일 캠페인에 사용할 템플릿을 관리하세요</p>
+      </div>
+      <button 
+        @click="showCreateModal = true" 
+        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        새 템플릿 만들기
+      </button>
     </div>
 
-    <table class="min-w-full bg-white">
-      <thead>
-        <tr>
-          <th class="py-2 px-4 border-b">Name</th>
-          <th class="py-2 px-4 border-b">Created At</th>
-          <th class="py-2 px-4 border-b">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="template in templates" :key="template.id">
-          <td class="py-2 px-4 border-b">{{ template.name }}</td>
-          <td class="py-2 px-4 border-b">{{ template.created_at ? new Date(template.created_at * 1000).toLocaleString() : '' }}</td>
-          <td class="py-2 px-4 border-b">
-            <button @click="editTemplate(template)" class="text-blue-500 hover:underline mr-2">Edit</button>
-            <button @click="confirmDelete(template)" class="text-red-500 hover:underline">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Templates Grid -->
+    <div v-if="templates.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div 
+        v-for="template in templates" 
+        :key="template.id"
+        class="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 overflow-hidden group">
+        
+        <!-- Template Preview -->
+        <div class="h-32 bg-gradient-to-br from-gray-50 to-gray-100 p-4 flex items-center justify-center border-b border-gray-100">
+          <div class="text-center">
+            <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <p class="text-sm text-gray-500">이메일 템플릿</p>
+          </div>
+        </div>
+
+        <!-- Template Info -->
+        <div class="p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2 truncate">{{ template.name }}</h3>
+          <p class="text-sm text-gray-500 mb-4">
+            {{ template.created_at ? new Date(template.created_at * 1000).toLocaleDateString('ko-KR') : '' }}
+          </p>
+          
+          <!-- Actions -->
+          <div class="flex items-center justify-between">
+            <div class="flex space-x-2">
+              <button 
+                @click="editTemplate(template)"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors duration-200">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                편집
+              </button>
+              <button 
+                @click="confirmDelete(template)"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors duration-200">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="text-center py-16">
+      <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">아직 템플릿이 없습니다</h3>
+      <p class="text-gray-600 mb-6">첫 번째 이메일 템플릿을 만들어 시작해보세요</p>
+      <button 
+        @click="showCreateModal = true"
+        class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+        </svg>
+        새 템플릿 만들기
+      </button>
+    </div>
 
     <!-- Pagination -->
     <Pagination
-      v-if="pagination"
+      v-if="pagination && templates.length > 0"
       :current-page="pagination.page || 1"
       :total="pagination.total || 0"
       :limit="pagination.limit || 20"
@@ -35,30 +94,102 @@
     />
 
     <!-- Create/Edit Modal -->
-    <div v-if="showCreateModal || editingTemplate" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-2/3">
-        <h2 class="text-xl font-bold mb-4">{{ editingTemplate ? 'Edit Template' : 'Create Template' }}</h2>
-        <form @submit.prevent="saveTemplate">
-          <div class="mb-4">
-            <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
-            <input v-model="templateForm.name" type="text" id="name" class="mt-1 p-2 border rounded w-full" required>
+    <div v-if="showCreateModal || editingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">
+                {{ editingTemplate ? '템플릿 편집' : '새 템플릿 만들기' }}
+              </h2>
+              <p class="text-gray-600 mt-1">이메일 캠페인에 사용할 템플릿을 작성하세요</p>
+            </div>
+            <button 
+              @click="closeModal"
+              class="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200">
+              <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
           </div>
-          <div class="mb-4">
-            <label for="body_html" class="block text-sm font-medium text-gray-700">HTML Body</label>
-            <textarea v-model="templateForm.body_html" id="body_html" rows="10" class="mt-1 p-2 border rounded w-full"></textarea>
-          </div>
-          <div class="mb-4">
-            <label for="body_text" class="block text-sm font-medium text-gray-700">Text Body</label>
-            <textarea v-model="templateForm.body_text" id="body_text" rows="10" class="mt-1 p-2 border rounded w-full"></textarea>
-          </div>
-          <div class="flex justify-end">
-            <button type="button" @click="closeModal" class="bg-gray-300 text-gray-800 px-4 py-2 rounded mr-2">Cancel</button>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">{{ editingTemplate ? 'Update' : 'Create' }}</button>
-          </div>
-        </form>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-8 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <form @submit.prevent="saveTemplate" class="space-y-6">
+            <!-- Template Name -->
+            <div>
+              <label for="name" class="block text-sm font-semibold text-gray-900 mb-2">
+                템플릿 이름 <span class="text-red-500">*</span>
+              </label>
+              <input 
+                v-model="templateForm.name" 
+                type="text" 
+                id="name" 
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                placeholder="예: 환영 이메일, 뉴스레터 등"
+                required>
+            </div>
+
+            <!-- HTML Body -->
+            <div>
+              <label for="body_html" class="block text-sm font-semibold text-gray-900 mb-2">
+                HTML 본문
+              </label>
+              <div class="relative">
+                <textarea 
+                  v-model="templateForm.body_html" 
+                  id="body_html" 
+                  rows="12" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-mono text-sm"
+                  placeholder="HTML 형식의 이메일 본문을 입력하세요..."></textarea>
+                <div class="absolute top-3 right-3">
+                  <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                    HTML
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Text Body -->
+            <div>
+              <label for="body_text" class="block text-sm font-semibold text-gray-900 mb-2">
+                텍스트 본문
+              </label>
+              <div class="relative">
+                <textarea 
+                  v-model="templateForm.body_text" 
+                  id="body_text" 
+                  rows="12" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="일반 텍스트 형식의 이메일 본문을 입력하세요..."></textarea>
+                <div class="absolute top-3 right-3">
+                  <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
+                    TEXT
+                  </span>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-8 py-6 border-t border-gray-200 bg-gray-50 flex justify-end space-x-4">
+          <button 
+            type="button" 
+            @click="closeModal" 
+            class="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-100 transition-all duration-200">
+            취소
+          </button>
+          <button 
+            @click="saveTemplate"
+            class="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg">
+            {{ editingTemplate ? '업데이트' : '생성' }}
+          </button>
+        </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -121,7 +252,7 @@ const editTemplate = (template: Template) => {
 };
 
 const confirmDelete = async (template: Template) => {
-  if (template.id && window.confirm(`Are you sure you want to delete the template "${template.name}"?`)) {
+  if (template.id && window.confirm(`"${template.name}" 템플릿을 정말 삭제하시겠습니까?`)) {
     try {
       await deleteTemplate(template.id);
       fetchTemplates();

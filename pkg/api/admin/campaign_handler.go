@@ -68,6 +68,9 @@ func (h *CampaignHandler) createCampaign(w http.ResponseWriter, r *http.Request)
 		UTMParams:    req.UTMParams,
 		ScheduledAt:  req.ScheduledAt,
 	}
+	if campaign.Status == "" {
+		campaign.Status = domain.CampaignStatusDraft
+	}
 
 	if err := h.service.CreateCampaign(r.Context(), campaign); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

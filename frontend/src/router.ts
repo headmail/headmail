@@ -8,6 +8,11 @@ const routes = [
     component: () => import('./views/Campaigns/Index.vue'),
   },
   {
+    path: '/campaigns/create',
+    name: 'CampaignCreate',
+    component: () => import('./views/Campaigns/Create.vue'),
+  },
+  {
     path: '/campaigns/:id',
     name: 'CampaignDetail',
     component: () => import('./views/Campaigns/Detail.vue'),

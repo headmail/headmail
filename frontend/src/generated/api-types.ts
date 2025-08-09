@@ -4,799 +4,1320 @@
  */
 
 export interface paths {
-  "/campaigns": {
-    /** List all campaigns */
-    get: {
-      parameters: {
-        query: {
-          /** Page number */
-          page?: number;
-          /** Number of items per page */
-          limit?: number;
-          /** Search term */
-          search?: string;
-          /** Tags to filter by */
-          "tags[]"?: string[];
-          /** Status to filter by */
-          "status[]"?: string[];
+    "/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.PaginatedListResponse-domain_Campaign"];
+        /**
+         * List all campaigns
+         * @description List all campaigns
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page number */
+                    page?: number;
+                    /** @description Number of items per page */
+                    limit?: number;
+                    /** @description Search term */
+                    search?: string;
+                    /** @description Tags to filter by */
+                    "tags[]"?: string[];
+                    /** @description Status to filter by */
+                    "status[]"?: string[];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.PaginatedListResponse-domain_Campaign"];
+                    };
+                };
+            };
         };
-      };
+        put?: never;
+        /**
+         * Create a new campaign
+         * @description Create a new campaign
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Campaign to create */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Campaign"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Create a new campaign */
-    post: {
-      parameters: {
-        body: {
-          /** Campaign to create */
-          campaign: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest"];
+    "/campaigns/{campaignID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** Created */
-        201: {
-          schema: definitions["domain.Campaign"];
+        /**
+         * Get a campaign by ID
+         * @description Get a campaign by ID
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Campaign"];
+                    };
+                };
+            };
         };
-      };
+        /**
+         * Update a campaign
+         * @description Update a campaign
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Campaign to update */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Campaign"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Delete a campaign
+         * @description Delete a campaign
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.DeleteResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-  };
-  "/campaigns/{campaignID}": {
-    /** Get a campaign by ID */
-    get: {
-      parameters: {
-        path: {
-          /** Campaign ID */
-          campaignID: string;
+    "/campaigns/{campaignID}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Campaign"];
+        /**
+         * List deliveries for a campaign
+         * @description List deliveries for a campaign
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page number */
+                    page?: number;
+                    /** @description Number of items per page */
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.PaginatedListResponse-domain_Delivery"];
+                    };
+                };
+            };
         };
-      };
+        put?: never;
+        /**
+         * Create deliveries for a campaign
+         * @description Create deliveries for a campaign
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Deliveries to create */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest"];
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Update a campaign */
-    put: {
-      parameters: {
-        path: {
-          /** Campaign ID */
-          campaignID: string;
+    "/campaigns/{campaignID}/deliveries/{deliveryID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        body: {
-          /** Campaign to update */
-          campaign: definitions["github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest"];
+        /**
+         * Get a delivery by ID
+         * @description Get a delivery by ID
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Delivery ID */
+                    deliveryID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Delivery"];
+                    };
+                };
+            };
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Campaign"];
-        };
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Delete a campaign */
-    delete: {
-      parameters: {
-        path: {
-          /** Campaign ID */
-          campaignID: string;
+    "/campaigns/{campaignID}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.DeleteResponse"];
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update campaign status
+         * @description Update campaign status
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Status update */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["api_admin.UpdateCampaignStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
         };
-      };
+        trace?: never;
     };
-  };
-  "/campaigns/{campaignID}/deliveries": {
-    /** List deliveries for a campaign */
-    get: {
-      parameters: {
-        path: {
-          /** Campaign ID */
-          campaignID: string;
+    "/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        query: {
-          /** Page number */
-          page?: number;
-          /** Number of items per page */
-          limit?: number;
+        /**
+         * List all mailing lists
+         * @description List all mailing lists
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page number */
+                    page?: number;
+                    /** @description Number of items per page */
+                    limit?: number;
+                    /** @description Search term */
+                    search?: string;
+                    /** @description Tags to filter by */
+                    "tags[]"?: string[];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.PaginatedListResponse-domain_List"];
+                    };
+                };
+            };
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.PaginatedListResponse-domain_Delivery"];
+        put?: never;
+        /**
+         * Create a new mailing list
+         * @description Create a new mailing list
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description List to create */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.List"];
+                    };
+                };
+            };
         };
-      };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Create deliveries for a campaign */
-    post: {
-      parameters: {
-        path: {
-          /** Campaign ID */
-          campaignID: string;
+    "/lists/{listID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        body: {
-          /** Deliveries to create */
-          request: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest"];
+        /**
+         * Get a mailing list by ID
+         * @description Get a mailing list by ID
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.List"];
+                    };
+                };
+            };
         };
-      };
-      responses: {
-        /** Accepted */
-        202: {
-          schema: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse"];
+        /**
+         * Update a mailing list
+         * @description Update a mailing list
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
+                cookie?: never;
+            };
+            /** @description List to update */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.List"];
+                    };
+                };
+            };
         };
-      };
+        post?: never;
+        /**
+         * Delete a mailing list
+         * @description Delete a mailing list
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.DeleteResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-  };
-  "/campaigns/{campaignID}/deliveries/{deliveryID}": {
-    /** Get a delivery by ID */
-    get: {
-      parameters: {
-        path: {
-          /** Delivery ID */
-          deliveryID: string;
+    "/lists/{listID}/subscribers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Delivery"];
+        /**
+         * List subscribers
+         * @description List subscribers
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page number */
+                    page?: number;
+                    /** @description Number of items per page */
+                    limit?: number;
+                    /** @description Filter by status */
+                    status?: string;
+                    /** @description Search term */
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.PaginatedListResponse-domain_Subscriber"];
+                    };
+                };
+            };
         };
-      };
+        put?: never;
+        /**
+         * Add subscribers to a list
+         * @description Add subscribers to a list
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Subscribers to add */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["api_admin.CreateSubscribersRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.EmptyResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-  };
-  "/campaigns/{campaignID}/status": {
-    /** Update campaign status */
-    patch: {
-      parameters: {
-        path: {
-          /** Campaign ID */
-          campaignID: string;
+    "/subscribers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        body: {
-          /** Status update */
-          statusUpdate: definitions["api_admin.UpdateCampaignStatusRequest"];
+        /**
+         * List subscribers
+         * @description List subscribers
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page number */
+                    page?: number;
+                    /** @description Number of items per page */
+                    limit?: number;
+                    /** @description Filter by status */
+                    status?: string;
+                    /** @description Search term */
+                    search?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.PaginatedListResponse-domain_Subscriber"];
+                    };
+                };
+            };
         };
-      };
-      responses: {
-        /** No Content */
-        204: never;
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-  };
-  "/lists": {
-    /** List all mailing lists */
-    get: {
-      parameters: {
-        query: {
-          /** Page number */
-          page?: number;
-          /** Number of items per page */
-          limit?: number;
-          /** Search term */
-          search?: string;
-          /** Tags to filter by */
-          "tags[]"?: string[];
+    "/subscribers/{subscriberID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.PaginatedListResponse-domain_List"];
+        /**
+         * Get a subscriber by ID
+         * @description Get a subscriber by ID
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Subscriber ID */
+                    subscriberID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Subscriber"];
+                    };
+                };
+            };
         };
-      };
+        /**
+         * Update a subscriber
+         * @description Update a subscriber
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Subscriber ID */
+                    subscriberID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Subscriber to update */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Subscriber"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Delete a subscriber
+         * @description Delete a subscriber
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Subscriber ID */
+                    subscriberID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.DeleteResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Create a new mailing list */
-    post: {
-      parameters: {
-        body: {
-          /** List to create */
-          list: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest"];
+    "/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** Created */
-        201: {
-          schema: definitions["domain.List"];
+        /**
+         * List all templates
+         * @description List all templates
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Page number */
+                    page?: number;
+                    /** @description Number of items per page */
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.PaginatedListResponse-domain_Template"];
+                    };
+                };
+            };
         };
-      };
+        put?: never;
+        /**
+         * Create a new template
+         * @description Create a new template
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Template to create */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Template"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-  };
-  "/lists/{listID}": {
-    /** Get a mailing list by ID */
-    get: {
-      parameters: {
-        path: {
-          /** List ID */
-          listID: string;
+    "/templates/{templateID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.List"];
+        /**
+         * Get a template by ID
+         * @description Get a template by ID
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Template ID */
+                    templateID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Template"];
+                    };
+                };
+            };
         };
-      };
+        /**
+         * Update a template
+         * @description Update a template
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Template ID */
+                    templateID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Template to update */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Template"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Delete a template
+         * @description Delete a template
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Template ID */
+                    templateID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.DeleteResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Update a mailing list */
-    put: {
-      parameters: {
-        path: {
-          /** List ID */
-          listID: string;
+    "/tx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        body: {
-          /** List to update */
-          list: definitions["github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest"];
+        get?: never;
+        put?: never;
+        /**
+         * Create a new transactional delivery
+         * @description Create a new transactional delivery
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Transactional delivery to create */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Delivery"];
+                    };
+                };
+            };
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.List"];
-        };
-      };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Delete a mailing list */
-    delete: {
-      parameters: {
-        path: {
-          /** List ID */
-          listID: string;
+    "/tx/{deliveryID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.DeleteResponse"];
+        /**
+         * Get a delivery by ID
+         * @description Get a delivery by ID
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Delivery ID */
+                    deliveryID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Delivery"];
+                    };
+                };
+            };
         };
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-  };
-  "/lists/{listID}/subscribers": {
-    /** List subscribers */
-    get: {
-      parameters: {
-        query: {
-          /** Page number */
-          page?: number;
-          /** Number of items per page */
-          limit?: number;
-          /** Filter by status */
-          status?: string;
-          /** Search term */
-          search?: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.PaginatedListResponse-domain_Subscriber"];
-        };
-      };
-    };
-    /** Add subscribers to a list */
-    post: {
-      parameters: {
-        path: {
-          /** List ID */
-          listID: string;
-        };
-        body: {
-          /** Subscribers to add */
-          request: definitions["api_admin.CreateSubscribersRequest"];
-        };
-      };
-      responses: {
-        /** Created */
-        201: {
-          schema: definitions["api_admin.EmptyResponse"];
-        };
-      };
-    };
-  };
-  "/subscribers": {
-    /** List subscribers */
-    get: {
-      parameters: {
-        query: {
-          /** Page number */
-          page?: number;
-          /** Number of items per page */
-          limit?: number;
-          /** Filter by status */
-          status?: string;
-          /** Search term */
-          search?: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.PaginatedListResponse-domain_Subscriber"];
-        };
-      };
-    };
-  };
-  "/subscribers/{subscriberID}": {
-    /** Get a subscriber by ID */
-    get: {
-      parameters: {
-        path: {
-          /** Subscriber ID */
-          subscriberID: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Subscriber"];
-        };
-      };
-    };
-    /** Update a subscriber */
-    put: {
-      parameters: {
-        path: {
-          /** Subscriber ID */
-          subscriberID: string;
-        };
-        body: {
-          /** Subscriber to update */
-          subscriber: definitions["github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest"];
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Subscriber"];
-        };
-      };
-    };
-    /** Delete a subscriber */
-    delete: {
-      parameters: {
-        path: {
-          /** Subscriber ID */
-          subscriberID: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.DeleteResponse"];
-        };
-      };
-    };
-  };
-  "/templates": {
-    /** List all templates */
-    get: {
-      parameters: {
-        query: {
-          /** Page number */
-          page?: number;
-          /** Number of items per page */
-          limit?: number;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.PaginatedListResponse-domain_Template"];
-        };
-      };
-    };
-    /** Create a new template */
-    post: {
-      parameters: {
-        body: {
-          /** Template to create */
-          template: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest"];
-        };
-      };
-      responses: {
-        /** Created */
-        201: {
-          schema: definitions["domain.Template"];
-        };
-      };
-    };
-  };
-  "/templates/{templateID}": {
-    /** Get a template by ID */
-    get: {
-      parameters: {
-        path: {
-          /** Template ID */
-          templateID: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Template"];
-        };
-      };
-    };
-    /** Update a template */
-    put: {
-      parameters: {
-        path: {
-          /** Template ID */
-          templateID: string;
-        };
-        body: {
-          /** Template to update */
-          template: definitions["github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest"];
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Template"];
-        };
-      };
-    };
-    /** Delete a template */
-    delete: {
-      parameters: {
-        path: {
-          /** Template ID */
-          templateID: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["api_admin.DeleteResponse"];
-        };
-      };
-    };
-  };
-  "/tx": {
-    /** Create a new transactional delivery */
-    post: {
-      parameters: {
-        body: {
-          /** Transactional delivery to create */
-          delivery: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest"];
-        };
-      };
-      responses: {
-        /** Created */
-        201: {
-          schema: definitions["domain.Delivery"];
-        };
-      };
-    };
-  };
-  "/tx/{deliveryID}": {
-    /** Get a delivery by ID */
-    get: {
-      parameters: {
-        path: {
-          /** Delivery ID */
-          deliveryID: string;
-        };
-      };
-      responses: {
-        /** OK */
-        200: {
-          schema: definitions["domain.Delivery"];
-        };
-      };
-    };
-  };
 }
-
-export interface definitions {
-  "api_admin.CreateSubscribersRequest": {
-    append?: boolean;
-    subscribers?: definitions["github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest"][];
-  };
-  "api_admin.DeleteResponse": {
-    deleted?: boolean;
-    message?: string;
-  };
-  "api_admin.EmptyResponse": { [key: string]: unknown };
-  "api_admin.PaginatedListResponse-domain_Campaign": {
-    data?: definitions["domain.Campaign"][];
-    pagination?: definitions["api_admin.PaginationResponse"];
-  };
-  "api_admin.PaginatedListResponse-domain_Delivery": {
-    data?: definitions["domain.Delivery"][];
-    pagination?: definitions["api_admin.PaginationResponse"];
-  };
-  "api_admin.PaginatedListResponse-domain_List": {
-    data?: definitions["domain.List"][];
-    pagination?: definitions["api_admin.PaginationResponse"];
-  };
-  "api_admin.PaginatedListResponse-domain_Subscriber": {
-    data?: definitions["domain.Subscriber"][];
-    pagination?: definitions["api_admin.PaginationResponse"];
-  };
-  "api_admin.PaginatedListResponse-domain_Template": {
-    data?: definitions["domain.Template"][];
-    pagination?: definitions["api_admin.PaginationResponse"];
-  };
-  "api_admin.PaginationResponse": {
-    limit?: number;
-    page?: number;
-    total?: number;
-  };
-  "api_admin.UpdateCampaignStatusRequest": {
-    status?: definitions["domain.CampaignStatus"];
-  };
-  "domain.Campaign": {
-    bounce_count?: number;
-    click_count?: number;
-    /** @description Unix timestamp */
-    created_at?: number;
-    /** @description JSON data for templates */
-    data?: { [key: string]: unknown };
-    /** @description For soft deletes */
-    deleted_at?: number;
-    delivered_count?: number;
-    failed_count?: number;
-    /** @description Sender's email */
-    from_email?: string;
-    /** @description Sender's name */
-    from_name?: string;
-    /** @description Additional email headers */
-    headers?: { [key: string]: string };
-    /** @description UUID */
-    id?: string;
-    /** @description Name of the campaign */
-    name?: string;
-    open_count?: number;
-    /** @description Calculated statistics */
-    recipient_count?: number;
-    /** @description Scheduled time for sending */
-    scheduled_at?: number;
-    /** @description Time when sending was completed */
-    sent_at?: number;
-    /** @description Status of the campaign */
-    status?: definitions["domain.CampaignStatus"];
-    /** @description Subject template */
-    subject?: string;
-    /** @description Tags for categorization */
-    tags?: string[];
-    /** @description HTML template */
-    template_html?: string;
-    /** @description Optional template ID */
-    template_id?: string;
-    /** @description Plain text template */
-    template_text?: string;
-    /** @description Unix timestamp */
-    updated_at?: number;
-    /** @description UTM parameters for link tracking */
-    utm_params?: { [key: string]: string };
-  };
-  /** @enum {string} */
-  "domain.CampaignStatus":
-    | "draft"
-    | "scheduled"
-    | "sending"
-    | "sent"
-    | "paused"
-    | "cancelled";
-  "domain.Delivery": {
-    /** @description HTML body */
-    body_html?: string;
-    /** @description Text body */
-    body_text?: string;
-    /** @description Number of bounces */
-    bounce_count?: number;
-    /** @description Campaign ID (nullable for transactional) */
-    campaign_id?: string;
-    /** @description Number of clicks */
-    click_count?: number;
-    /** @description Timestamps */
-    created_at?: number;
-    /** @description Individual data for templates */
-    data?: { [key: string]: unknown };
-    /** @description Recipient's email */
-    email?: string;
-    /** @description Time of failure */
-    failed_at?: number;
-    /** @description Reason for failure */
-    failure_reason?: string;
-    /** @description Individual headers */
-    headers?: { [key: string]: string };
-    /** @description UUID */
-    id?: string;
-    /** @description SMTP Message ID */
-    message_id?: string;
-    /** @description Recipient's name */
-    name?: string;
-    /** @description Statistics */
-    open_count?: number;
-    /** @description First open time */
-    opened_at?: number;
-    /** @description Scheduled time */
-    scheduled_at?: number;
-    /** @description Time of sending */
-    sent_at?: number;
-    /** @description scheduled, sending, sent, delivered, failed, bounced */
-    status?: definitions["domain.DeliveryStatus"];
-    /** @description Actual sent subject */
-    subject?: string;
-    /** @description Tags for categorization */
-    tags?: string[];
-    /** @description campaign, transactional */
-    type?: definitions["domain.DeliveryType"];
-  };
-  /** @enum {string} */
-  "domain.DeliveryStatus":
-    | "scheduled"
-    | "sending"
-    | "sent"
-    | "delivered"
-    | "failed"
-    | "bounced";
-  /** @enum {string} */
-  "domain.DeliveryType": "campaign" | "transaction";
-  "domain.List": {
-    /** @description Unix timestamp in seconds */
-    created_at?: number;
-    /** @description For soft deletes */
-    deleted_at?: number;
-    /** @description Description of the list */
-    description?: string;
-    /** @description UUID */
-    id?: string;
-    /** @description Name of the list */
-    name?: string;
-    /** @description Calculated field for subscriber count */
-    subscriber_count?: number;
-    /** @description Tags for categorization */
-    tags?: string[];
-    /** @description Unix timestamp in seconds */
-    updated_at?: number;
-  };
-  "domain.Subscriber": {
-    /** @description Unix timestamp in seconds */
-    created_at?: number;
-    /** @description Unique email address */
-    email?: string;
-    /** @description UUID */
-    id?: string;
-    lists?: definitions["domain.SubscriberList"][];
-    /** @description Name of the subscriber */
-    name?: string;
-    status?: definitions["domain.SubscriberStatus"];
-    /** @description Unix timestamp in seconds */
-    updated_at?: number;
-  };
-  "domain.SubscriberList": {
-    /** @description Unix timestamp in seconds */
-    created_at?: number;
-    /** @description Foreign key to the List */
-    list_id?: string;
-    status?: definitions["domain.SubscriberListStatus"];
-    /** @description Unix timestamp of subscription */
-    subscribed_at?: number;
-    /** @description Unix timestamp of unsubscription */
-    unsubscribed_at?: number;
-    /** @description Unix timestamp in seconds */
-    updated_at?: number;
-  };
-  /** @enum {string} */
-  "domain.SubscriberListStatus":
-    | "confirmed"
-    | "unsubscribed"
-    | "bounced"
-    | "complained";
-  /** @enum {string} */
-  "domain.SubscriberStatus": "enabled" | "disabled";
-  "domain.Template": {
-    /** @description HTML content of the template */
-    body_html?: string;
-    /** @description Text content of the template */
-    body_text?: string;
-    /** @description Unix timestamp seconds */
-    created_at?: number;
-    /** @description UUID */
-    id?: string;
-    /** @description Template name */
-    name?: string;
-    /** @description Unix timestamp seconds */
-    updated_at?: number;
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest": {
-    data?: { [key: string]: unknown };
-    from_email?: string;
-    from_name?: string;
-    headers?: { [key: string]: string };
-    name?: string;
-    scheduled_at?: number;
-    status?: definitions["domain.CampaignStatus"];
-    subject?: string;
-    tags?: string[];
-    template_html?: string;
-    template_text?: string;
-    utm_params?: { [key: string]: string };
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest": {
-    individuals?: definitions["github_com_headmail_headmail_pkg_api_admin_dto.Individual"][];
-    lists?: string[];
-    scheduled_at?: number;
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse": {
-    deliveries_created?: number;
-    scheduled_at?: number;
-    status?: definitions["domain.CampaignStatus"];
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest": {
-    description?: string;
-    name?: string;
-    tags?: string[];
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest": {
-    email?: string;
-    name?: string;
-    status?: definitions["domain.SubscriberStatus"];
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest": {
-    body_html?: string;
-    body_text?: string;
-    name?: string;
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest": {
-    data?: { [key: string]: unknown };
-    email?: string;
-    headers?: { [key: string]: string };
-    name?: string;
-    subject?: string;
-    tags?: string[];
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.Individual": {
-    data?: { [key: string]: unknown };
-    email?: string;
-    headers?: { [key: string]: string };
-    name?: string;
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest": {
-    data?: { [key: string]: unknown };
-    from_email?: string;
-    from_name?: string;
-    headers?: { [key: string]: string };
-    name?: string;
-    scheduled_at?: number;
-    status?: definitions["domain.CampaignStatus"];
-    subject?: string;
-    tags?: string[];
-    template_html?: string;
-    template_text?: string;
-    utm_params?: { [key: string]: string };
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest": {
-    description?: string;
-    name?: string;
-    tags?: string[];
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest": {
-    email?: string;
-    name?: string;
-    status?: definitions["domain.SubscriberStatus"];
-  };
-  "github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest": {
-    body_html?: string;
-    body_text?: string;
-    name?: string;
-  };
+export type webhooks = Record<string, never>;
+export interface components {
+    schemas: {
+        "api_admin.CreateSubscribersRequest": {
+            append?: boolean;
+            subscribers?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest"][];
+        };
+        "api_admin.DeleteResponse": {
+            deleted?: boolean;
+            message?: string;
+        };
+        "api_admin.EmptyResponse": Record<string, never>;
+        "api_admin.PaginatedListResponse-domain_Campaign": {
+            data?: components["schemas"]["domain.Campaign"][];
+            pagination?: components["schemas"]["api_admin.PaginationResponse"];
+        };
+        "api_admin.PaginatedListResponse-domain_Delivery": {
+            data?: components["schemas"]["domain.Delivery"][];
+            pagination?: components["schemas"]["api_admin.PaginationResponse"];
+        };
+        "api_admin.PaginatedListResponse-domain_List": {
+            data?: components["schemas"]["domain.List"][];
+            pagination?: components["schemas"]["api_admin.PaginationResponse"];
+        };
+        "api_admin.PaginatedListResponse-domain_Subscriber": {
+            data?: components["schemas"]["domain.Subscriber"][];
+            pagination?: components["schemas"]["api_admin.PaginationResponse"];
+        };
+        "api_admin.PaginatedListResponse-domain_Template": {
+            data?: components["schemas"]["domain.Template"][];
+            pagination?: components["schemas"]["api_admin.PaginationResponse"];
+        };
+        "api_admin.PaginationResponse": {
+            limit?: number;
+            page?: number;
+            total?: number;
+        };
+        "api_admin.UpdateCampaignStatusRequest": {
+            status?: string;
+        };
+        "domain.Campaign": {
+            bounce_count?: number;
+            click_count?: number;
+            /** @description Unix timestamp */
+            created_at?: number;
+            /** @description JSON data for templates */
+            data?: {
+                [key: string]: unknown;
+            };
+            /** @description For soft deletes */
+            deleted_at?: number;
+            delivered_count?: number;
+            failed_count?: number;
+            /** @description Sender's email */
+            from_email?: string;
+            /** @description Sender's name */
+            from_name?: string;
+            /** @description Additional email headers */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description UUID */
+            id?: string;
+            /** @description Name of the campaign */
+            name?: string;
+            open_count?: number;
+            /** @description Calculated statistics */
+            recipient_count?: number;
+            /** @description Scheduled time for sending */
+            scheduled_at?: number;
+            /** @description Time when sending was completed */
+            sent_at?: number;
+            /** @description Status of the campaign */
+            status?: string;
+            /** @description Subject template */
+            subject?: string;
+            /** @description Tags for categorization */
+            tags?: string[];
+            /** @description HTML template */
+            template_html?: string;
+            /** @description Optional template ID */
+            template_id?: string;
+            /** @description Plain text template */
+            template_text?: string;
+            /** @description Unix timestamp */
+            updated_at?: number;
+            /** @description UTM parameters for link tracking */
+            utm_params?: {
+                [key: string]: string;
+            };
+        };
+        "domain.CampaignStatus": string;
+        "domain.Delivery": {
+            /** @description HTML body */
+            body_html?: string;
+            /** @description Text body */
+            body_text?: string;
+            /** @description Number of bounces */
+            bounce_count?: number;
+            /** @description Campaign ID (nullable for transactional) */
+            campaign_id?: string;
+            /** @description Number of clicks */
+            click_count?: number;
+            /** @description Timestamps */
+            created_at?: number;
+            /** @description Individual data for templates */
+            data?: {
+                [key: string]: unknown;
+            };
+            /** @description Recipient's email */
+            email?: string;
+            /** @description Time of failure */
+            failed_at?: number;
+            /** @description Reason for failure */
+            failure_reason?: string;
+            /** @description Individual headers */
+            headers?: {
+                [key: string]: string;
+            };
+            /** @description UUID */
+            id?: string;
+            /** @description SMTP Message ID */
+            message_id?: string;
+            /** @description Recipient's name */
+            name?: string;
+            /** @description Statistics */
+            open_count?: number;
+            /** @description First open time */
+            opened_at?: number;
+            /** @description Scheduled time */
+            scheduled_at?: number;
+            /** @description Time of sending */
+            sent_at?: number;
+            status?: components["schemas"]["domain.DeliveryStatus"];
+            /** @description Actual sent subject */
+            subject?: string;
+            /** @description Tags for categorization */
+            tags?: string[];
+            type?: components["schemas"]["domain.DeliveryType"];
+        };
+        /** @description scheduled, sending, sent, delivered, failed, bounced */
+        "domain.DeliveryStatus": string;
+        /** @description campaign, transactional */
+        "domain.DeliveryType": string;
+        "domain.List": {
+            /** @description Unix timestamp in seconds */
+            created_at?: number;
+            /** @description For soft deletes */
+            deleted_at?: number;
+            /** @description Description of the list */
+            description?: string;
+            /** @description UUID */
+            id?: string;
+            /** @description Name of the list */
+            name?: string;
+            /** @description Calculated field for subscriber count */
+            subscriber_count?: number;
+            /** @description Tags for categorization */
+            tags?: string[];
+            /** @description Unix timestamp in seconds */
+            updated_at?: number;
+        };
+        "domain.Subscriber": {
+            /** @description Unix timestamp in seconds */
+            created_at?: number;
+            /** @description Unique email address */
+            email?: string;
+            /** @description UUID */
+            id?: string;
+            lists?: components["schemas"]["domain.SubscriberList"][];
+            /** @description Name of the subscriber */
+            name?: string;
+            status?: string;
+            /** @description Unix timestamp in seconds */
+            updated_at?: number;
+        };
+        "domain.SubscriberList": {
+            /** @description Unix timestamp in seconds */
+            created_at?: number;
+            /** @description Foreign key to the List */
+            list_id?: string;
+            status?: components["schemas"]["domain.SubscriberListStatus"];
+            /** @description Unix timestamp of subscription */
+            subscribed_at?: number;
+            /** @description Unix timestamp of unsubscription */
+            unsubscribed_at?: number;
+            /** @description Unix timestamp in seconds */
+            updated_at?: number;
+        };
+        "domain.SubscriberListStatus": string;
+        "domain.SubscriberStatus": string;
+        "domain.Template": {
+            /** @description HTML content of the template */
+            body_html?: string;
+            /** @description Text content of the template */
+            body_text?: string;
+            /** @description Unix timestamp seconds */
+            created_at?: number;
+            /** @description UUID */
+            id?: string;
+            /** @description Template name */
+            name?: string;
+            /** @description Unix timestamp seconds */
+            updated_at?: number;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest": {
+            data?: {
+                [key: string]: unknown;
+            };
+            from_email?: string;
+            from_name?: string;
+            headers?: {
+                [key: string]: string;
+            };
+            name?: string;
+            scheduled_at?: number;
+            status?: components["schemas"]["domain.CampaignStatus"];
+            subject?: string;
+            tags?: string[];
+            template_html?: string;
+            template_text?: string;
+            utm_params?: {
+                [key: string]: string;
+            };
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest": {
+            individuals?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.Individual"][];
+            lists?: string[];
+            scheduled_at?: number;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse": {
+            deliveries_created?: number;
+            scheduled_at?: number;
+            status?: string;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest": {
+            description?: string;
+            name?: string;
+            tags?: string[];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest": {
+            email?: string;
+            name?: string;
+            status?: components["schemas"]["domain.SubscriberStatus"];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest": {
+            body_html?: string;
+            body_text?: string;
+            name?: string;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest": {
+            data?: {
+                [key: string]: unknown;
+            };
+            email?: string;
+            headers?: {
+                [key: string]: string;
+            };
+            name?: string;
+            subject?: string;
+            tags?: string[];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.Individual": {
+            data?: {
+                [key: string]: unknown;
+            };
+            email?: string;
+            headers?: {
+                [key: string]: string;
+            };
+            name?: string;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest": {
+            data?: {
+                [key: string]: unknown;
+            };
+            from_email?: string;
+            from_name?: string;
+            headers?: {
+                [key: string]: string;
+            };
+            name?: string;
+            scheduled_at?: number;
+            status?: components["schemas"]["domain.CampaignStatus"];
+            subject?: string;
+            tags?: string[];
+            template_html?: string;
+            template_text?: string;
+            utm_params?: {
+                [key: string]: string;
+            };
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateListRequest": {
+            description?: string;
+            name?: string;
+            tags?: string[];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateSubscriberRequest": {
+            email?: string;
+            name?: string;
+            status?: components["schemas"]["domain.SubscriberStatus"];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest": {
+            body_html?: string;
+            body_text?: string;
+            name?: string;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-
-export interface operations {}
-
-export interface external {}
+export type $defs = Record<string, never>;
+export type operations = Record<string, never>;

@@ -134,16 +134,13 @@ func (r *subscriberRepository) Update(ctx context.Context, subscriber *domain.Su
 		return err
 	}
 
-	// Update lists associations
-	// First, remove existing associations
-	if err := db.WithContext(ctx).Where("subscriber_id = ?", entity.ID).Delete(&SubscriberList{}).Error; err != nil {
-		return err
-	}
-
-	// Then, add the new associations
+	// Upsert lists associations
 	for _, list := range entity.Lists {
 		list.SubscriberID = entity.ID
-		if err := db.WithContext(ctx).Create(&list).Error; err != nil {
+		if err := db.WithContext(ctx).Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "subscriber_id"}, {Name: "list_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"status", "updated_at"}),
+		}).Create(&list).Error; err != nil {
 			return err
 		}
 	}
