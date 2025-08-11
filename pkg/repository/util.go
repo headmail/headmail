@@ -4,31 +4,50 @@ import (
 	"context"
 )
 
-func Transactional0(db DB, ctx context.Context, fn func(txCtx context.Context) error) error {
-	txCtx, err := db.Begin(ctx)
-	if err != nil {
-		return err
+type txContextKey struct{}
+
+type txContextData struct {
+	needRollback bool
+}
+
+func transactionWrap(db DB, ctx context.Context, fn func(txCtx context.Context) error) error {
+	var err error
+	var newTx bool
+	txData, ok := ctx.Value(txContextKey{}).(*txContextData)
+	if !ok {
+		newTx = true
+		txData = &txContextData{}
+		ctx = context.WithValue(ctx, txContextKey{}, txData)
+		ctx, err = db.Begin(ctx)
+		if err != nil {
+			return err
+		}
 	}
-	err = fn(txCtx)
+
+	err = fn(ctx)
 	if err != nil {
-		_ = db.Rollback(txCtx)
-	} else {
-		err = db.Commit(txCtx)
+		txData.needRollback = true
+	}
+	if newTx {
+		if err != nil || txData.needRollback {
+			_ = db.Rollback(ctx)
+			return err
+		}
+		return db.Commit(ctx)
 	}
 	return err
 }
 
+func Transactional0(db DB, ctx context.Context, fn func(txCtx context.Context) error) error {
+	return transactionWrap(db, ctx, fn)
+}
+
 func Transactional1[T interface{}](db DB, ctx context.Context, fn func(txCtx context.Context) (T, error)) (T, error) {
 	var out T
-	txCtx, err := db.Begin(ctx)
-	if err != nil {
-		return out, err
-	}
-	out, err = fn(txCtx)
-	if err != nil {
-		_ = db.Rollback(txCtx)
-	} else {
-		err = db.Commit(txCtx)
-	}
+	err := transactionWrap(db, ctx, func(txCtx context.Context) error {
+		var e error
+		out, e = fn(txCtx)
+		return e
+	})
 	return out, err
 }

@@ -35,12 +35,14 @@ type Delivery struct {
 	Tags       []string               `json:"tags"`                  // Tags for categorization
 
 	// Timestamps
-	CreatedAt     int64   `json:"created_at"`               // Creation time
-	ScheduledAt   *int64  `json:"scheduled_at,omitempty"`   // Scheduled time
-	SentAt        *int64  `json:"sent_at,omitempty"`        // Time of sending
-	OpenedAt      *int64  `json:"opened_at,omitempty"`      // First open time
-	FailedAt      *int64  `json:"failed_at,omitempty"`      // Time of failure
-	FailureReason *string `json:"failure_reason,omitempty"` // Reason for failure
+	CreatedAt       int64   `json:"created_at"`             // Creation time
+	ScheduledAt     *int64  `json:"scheduled_at,omitempty"` // Scheduled time
+	Attempts        int     `json:"attempts"`
+	SendScheduledAt *int64  `json:"send_scheduled_at,omitempty"`
+	SentAt          *int64  `json:"sent_at,omitempty"`        // Time of sending
+	OpenedAt        *int64  `json:"opened_at,omitempty"`      // First open time
+	FailedAt        *int64  `json:"failed_at,omitempty"`      // Time of failure
+	FailureReason   *string `json:"failure_reason,omitempty"` // Reason for failure
 
 	// Statistics
 	OpenCount   int `json:"open_count"`   // Number of opens

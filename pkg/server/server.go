@@ -2,10 +2,14 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/template"
 
 	"github.com/go-chi/chi/v5"
@@ -13,8 +17,9 @@ import (
 	"github.com/headmail/headmail/pkg/api/admin"
 	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/db"
+	"github.com/headmail/headmail/pkg/queue"
 	"github.com/headmail/headmail/pkg/repository"
-	"github.com/headmail/headmail/pkg/service"
+	"github.com/headmail/headmail/pkg/service" // for worker package in same module
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	// Import providers to register them
@@ -74,13 +79,18 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 	}
 
 	// Initialize services
+	// create queue from DB provider and pass into delivery service
+	q := srv.db.QueueRepository()
+	srv.deliveryService = service.NewDeliveryService(srv.db, q, cfg.SMTP)
+
 	templateService := template.NewService()
 	srv.listService = service.NewListService(srv.db)
 	srv.campaignService = service.NewCampaignService(
 		srv.db,
+		srv.deliveryService,
 		templateService,
 	)
-	srv.deliveryService = service.NewDeliveryService(srv.db)
+
 	srv.templateService = service.NewTemplateService(srv.db)
 
 	// Register routes
@@ -130,6 +140,28 @@ func (s *Server) Serve() {
 		Handler: s.publicRouter,
 	}
 
+	// start background scheduler and worker
+	q := s.db.QueueRepository()
+	// start scheduler: enqueue scheduled deliveries every minute
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for {
+			processed := true
+			for processed {
+				processed = s.enqueueDueDeliveries() > 0
+			}
+
+			<-ticker.C
+		}
+	}()
+
+	// start worker(s) - single worker for now
+	worker := NewWorker(s.db, q)
+	_ = worker.SetHandler("delivery", s.deliveryService.HandleDeliveryQueuedItem)
+	hostname, _ := os.Hostname()
+	go worker.Start(context.Background(), hostname+":"+uuid.NewString())
+
 	go func() {
 		log.Printf("Starting admin server on port %d", s.cfg.Server.Admin.Port)
 		if err := s.adminServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -143,6 +175,35 @@ func (s *Server) Serve() {
 			log.Fatalf("Could not start public server: %v", err)
 		}
 	}()
+}
+
+// enqueueDueDeliveries finds scheduled deliveries whose scheduled_at <= now and enqueues them.
+func (s *Server) enqueueDueDeliveries() int {
+	ctx := context.Background()
+	now := time.Now().Unix()
+	// find scheduled deliveries directly from repository by timestamp
+	deliveries, err := s.db.DeliveryRepository().ListScheduledBefore(ctx, now, 1000)
+	if err != nil {
+		log.Printf("scheduler: failed to list scheduled deliveries: %v", err)
+		return 0
+	}
+	for _, d := range deliveries {
+		unique := "delivery:" + d.ID
+		payloadMap := map[string]string{"delivery_id": d.ID}
+		b, _ := json.Marshal(payloadMap)
+		item := &queue.QueueItem{
+			ID:        uuid.New().String(),
+			Type:      "delivery",
+			Payload:   b,
+			UniqueKey: &unique,
+			Status:    queue.StatusPending,
+			CreatedAt: time.Now().Unix(),
+		}
+		if err := s.db.QueueRepository().Enqueue(ctx, item); err != nil {
+			log.Printf("scheduler: enqueue failed for delivery %s: %v", d.ID, err)
+		}
+	}
+	return len(deliveries)
 }
 
 // Shutdown gracefully shuts down the servers.

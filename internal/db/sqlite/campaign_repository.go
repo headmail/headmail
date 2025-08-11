@@ -6,14 +6,13 @@ import (
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
-	"gorm.io/gorm"
 )
 
 type campaignRepository struct {
-	db *gorm.DB
+	db *DB
 }
 
-func NewCampaignRepository(db *gorm.DB) repository.CampaignRepository {
+func NewCampaignRepository(db *DB) repository.CampaignRepository {
 	return &campaignRepository{db: db}
 }
 
@@ -112,13 +111,13 @@ func (r *campaignRepository) Create(ctx context.Context, campaign *domain.Campai
 	if err != nil {
 		return err
 	}
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Create(entity).Error
 }
 
 func (r *campaignRepository) GetByID(ctx context.Context, id string) (*domain.Campaign, error) {
 	var entity Campaign
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	if err := db.WithContext(ctx).First(&entity, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
@@ -130,12 +129,12 @@ func (r *campaignRepository) Update(ctx context.Context, campaign *domain.Campai
 	if err != nil {
 		return err
 	}
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Save(entity).Error
 }
 
 func (r *campaignRepository) Delete(ctx context.Context, id string) error {
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Delete(&Campaign{}, "id = ?", id).Error
 }
 
@@ -143,7 +142,7 @@ func (r *campaignRepository) List(ctx context.Context, filter repository.Campaig
 	var entities []Campaign
 	var total int64
 
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&Campaign{})
 
 	if len(filter.Status) > 0 {
@@ -181,6 +180,6 @@ func (r *campaignRepository) List(ctx context.Context, filter repository.Campaig
 }
 
 func (r *campaignRepository) UpdateStatus(ctx context.Context, id string, status domain.CampaignStatus) error {
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Model(&Campaign{}).Where("id = ?", id).Update("status", status).Error
 }

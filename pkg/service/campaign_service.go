@@ -29,14 +29,15 @@ type CampaignService struct {
 	repo            repository.CampaignRepository
 	listRepo        repository.ListRepository
 	subscriberRepo  repository.SubscriberRepository
-	deliveryRepo    repository.DeliveryRepository
 	templateRepo    repository.TemplateRepository
+	deliveryService DeliveryServiceProvider
 	templateService *template.Service
 }
 
 // NewCampaignService creates a new CampaignService.
 func NewCampaignService(
 	db repository.DB,
+	deliveryService DeliveryServiceProvider,
 	templateService *template.Service,
 ) *CampaignService {
 	return &CampaignService{
@@ -44,7 +45,7 @@ func NewCampaignService(
 		repo:            db.CampaignRepository(),
 		listRepo:        db.ListRepository(),
 		subscriberRepo:  db.SubscriberRepository(),
-		deliveryRepo:    db.DeliveryRepository(),
+		deliveryService: deliveryService,
 		templateRepo:    db.TemplateRepository(),
 		templateService: templateService,
 	}
@@ -115,12 +116,10 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 				subscribersToUpsert[i] = &domain.Subscriber{
 					Email:  individual.Email,
 					Name:   individual.Name,
-					Status: "active",
+					Status: domain.SubscriberStatusEnabled,
 				}
-				// TODO: Consider how to handle ListID for individual subscribers.
-				// For now, we are not associating them with a list directly in this step.
 			}
-			if err := s.subscriberRepo.BulkUpsert(ctx, subscribersToUpsert); err != nil {
+			if err := s.subscriberRepo.BulkUpsert(txCtx, subscribersToUpsert); err != nil {
 				return 0, err
 			}
 
@@ -129,7 +128,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 					continue
 				}
 
-				delivery, err := s.createDeliveryFromCampaign(ctx, campaign, individual.Name, individual.Email, req.ScheduledAt, individual.Data, individual.Headers)
+				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, individual.Name, individual.Email, req.ScheduledAt, individual.Data, individual.Headers)
 				if err != nil {
 					return 0, err // Or handle error more gracefully
 				}
@@ -143,7 +142,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 			// TODO: stream
 			// We need to fetch all subscribers for the list.
 			// Assuming a large list, this should be paginated, but for now, we'll fetch all.
-			subscribers, err := s.subscriberRepo.ListStream(ctx, repository.SubscriberFilter{
+			subscribers, err := s.subscriberRepo.ListStream(txCtx, repository.SubscriberFilter{
 				ListID:     listID,
 				Status:     domain.SubscriberStatusEnabled,
 				ListStatus: domain.SubscriberListStatusConfirmed,
@@ -155,7 +154,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 				if processedEmails[subscriber.Email] {
 					continue
 				}
-				delivery, err := s.createDeliveryFromCampaign(ctx, campaign, subscriber.Name, subscriber.Email, req.ScheduledAt, nil, nil)
+				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, subscriber.Name, subscriber.Email, req.ScheduledAt, nil, nil)
 				if err != nil {
 					return 0, err // Or handle error more gracefully
 				}
@@ -164,11 +163,8 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 			}
 		}
 
-		// 5. Create deliveries in DB
-		// TODO: This should be a transactional operation.
 		for _, delivery := range deliveries {
-			if err := s.deliveryRepo.Create(ctx, delivery); err != nil {
-				// TODO: Handle partial creation
+			if err := s.deliveryService.CreateDelivery(txCtx, delivery); err != nil {
 				return 0, err
 			}
 		}
@@ -225,19 +221,20 @@ func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campai
 	}
 
 	delivery := &domain.Delivery{
-		ID:          deliveryID,
-		CampaignID:  &campaignID,
-		Type:        domain.DeliveryTypeCampaign,
-		Status:      domain.DeliveryStatusScheduled,
-		Name:        name,
-		Email:       email,
-		Subject:     renderedSubject,
-		BodyHTML:    renderedHTML,
-		BodyText:    renderedText,
-		Data:        templateData,
-		Headers:     finalHeaders,
-		Tags:        campaign.Tags,
-		ScheduledAt: scheduledAt,
+		ID:              deliveryID,
+		CampaignID:      &campaignID,
+		Type:            domain.DeliveryTypeCampaign,
+		Status:          domain.DeliveryStatusScheduled,
+		Name:            name,
+		Email:           email,
+		Subject:         renderedSubject,
+		BodyHTML:        renderedHTML,
+		BodyText:        renderedText,
+		Data:            templateData,
+		Headers:         finalHeaders,
+		Tags:            campaign.Tags,
+		ScheduledAt:     scheduledAt,
+		SendScheduledAt: scheduledAt,
 	}
 	return delivery, nil
 }

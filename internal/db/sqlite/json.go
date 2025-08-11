@@ -15,9 +15,14 @@ type JSON json.RawMessage
 
 // Scan scan value into Json, implements sql.Scanner interface
 func (j *JSON) Scan(value interface{}) error {
-	bytes, ok := value.([]byte)
-	if !ok {
-		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+	var bytes []byte
+	if s, ok := value.(string); ok {
+		bytes = []byte(s)
+	} else {
+		bytes, ok = value.([]byte)
+		if !ok {
+			return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+		}
 	}
 
 	result := json.RawMessage{}

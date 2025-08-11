@@ -6,16 +6,15 @@ import (
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
-	"gorm.io/gorm"
 )
 
 // listRepository implements the repository.ListRepository interface.
 type listRepository struct {
-	db *gorm.DB
+	db *DB
 }
 
 // NewListRepository creates a new list repository.
-func NewListRepository(db *gorm.DB) repository.ListRepository {
+func NewListRepository(db *DB) repository.ListRepository {
 	return &listRepository{db: db}
 }
 
@@ -58,13 +57,13 @@ func (r *listRepository) Create(ctx context.Context, list *domain.List) error {
 	if err != nil {
 		return err
 	}
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Create(entity).Error
 }
 
 func (r *listRepository) GetByID(ctx context.Context, id string) (*domain.List, error) {
 	var entity List
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	if err := db.WithContext(ctx).First(&entity, "id = ?", id).Error; err != nil {
 		return nil, err
 	}
@@ -76,12 +75,12 @@ func (r *listRepository) Update(ctx context.Context, list *domain.List) error {
 	if err != nil {
 		return err
 	}
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Save(entity).Error
 }
 
 func (r *listRepository) Delete(ctx context.Context, id string) error {
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Delete(&List{}, "id = ?", id).Error
 }
 
@@ -89,7 +88,7 @@ func (r *listRepository) List(ctx context.Context, filter repository.ListFilter,
 	var entities []List
 	var total int64
 
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&List{})
 
 	if filter.Search != "" {
@@ -125,7 +124,7 @@ func (r *listRepository) List(ctx context.Context, filter repository.ListFilter,
 
 func (r *listRepository) GetSubscriberCount(ctx context.Context, listID string) (int, error) {
 	var count int64
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	if err := db.WithContext(ctx).Model(&SubscriberList{}).Where("list_id = ?", listID).Count(&count).Error; err != nil {
 		return 0, err
 	}
@@ -140,7 +139,7 @@ func (r *listRepository) GetSubscribers(ctx context.Context) (chan *domain.Subsc
 	go func() {
 		defer close(subscribersChan)
 		var entities []Subscriber
-		db := extractTx(ctx, r.db)
+		db := extractTx(ctx, r.db.DB)
 		if err := db.WithContext(ctx).Preload("Lists").Find(&entities).Error; err != nil {
 			// In a real app, you'd handle this error more gracefully
 			return

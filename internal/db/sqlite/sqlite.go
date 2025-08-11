@@ -6,6 +6,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"github.com/headmail/headmail/pkg/config"
+	"github.com/headmail/headmail/pkg/queue"
 	"github.com/headmail/headmail/pkg/repository"
 	"gorm.io/gorm"
 )
@@ -33,6 +34,7 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 		&Delivery{},
 		&DeliveryEvent{},
 		&Template{},
+		&QueueItem{},
 	); err != nil {
 		return nil, err
 	}
@@ -42,23 +44,27 @@ func New(cfg config.DatabaseConfig) (*DB, error) {
 }
 
 func (db *DB) ListRepository() repository.ListRepository {
-	return NewListRepository(db.DB)
+	return NewListRepository(db)
 }
 
 func (db *DB) SubscriberRepository() repository.SubscriberRepository {
-	return NewSubscriberRepository(db.DB)
+	return NewSubscriberRepository(db)
 }
 
 func (db *DB) CampaignRepository() repository.CampaignRepository {
-	return NewCampaignRepository(db.DB)
+	return NewCampaignRepository(db)
 }
 
 func (db *DB) DeliveryRepository() repository.DeliveryRepository {
-	return NewDeliveryRepository(db.DB)
+	return NewDeliveryRepository(db)
 }
 
 func (db *DB) TemplateRepository() repository.TemplateRepository {
-	return NewTemplateRepository(db.DB)
+	return NewTemplateRepository(db)
+}
+
+func (db *DB) QueueRepository() queue.Queue {
+	return NewQueueRepository(db)
 }
 
 func (db *DB) Begin(ctx context.Context) (context.Context, error) {
@@ -70,11 +76,17 @@ func (db *DB) Begin(ctx context.Context) (context.Context, error) {
 }
 
 func (db *DB) Commit(ctx context.Context) error {
-	tx := extractTx(ctx, db.DB)
+	tx, err := getExistingTx(ctx, db.DB)
+	if err != nil {
+		return err
+	}
 	return tx.Commit().Error
 }
 
 func (db *DB) Rollback(ctx context.Context) error {
-	tx := extractTx(ctx, db.DB)
+	tx, err := getExistingTx(ctx, db.DB)
+	if err != nil {
+		return err
+	}
 	return tx.Rollback().Error
 }

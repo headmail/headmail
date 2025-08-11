@@ -19,6 +19,7 @@ smtp:
   send:
     batch_size: 100 # Number of emails to send in a batch
     throttle: 50    # Maximum emails per second
+    attempts: 5
 
 database:
   type: "sqlite" # sqlite, mysql, postgresql, mongodb

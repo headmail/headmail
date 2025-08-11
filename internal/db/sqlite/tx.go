@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -20,4 +21,12 @@ func extractTx(ctx context.Context, db *gorm.DB) *gorm.DB {
 		return tx
 	}
 	return db
+}
+
+func getExistingTx(ctx context.Context, db *gorm.DB) (*gorm.DB, error) {
+	tx, ok := ctx.Value(txKey{}).(*gorm.DB)
+	if !ok {
+		return nil, errors.New("no transaction")
+	}
+	return tx, nil
 }

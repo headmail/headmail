@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/headmail/headmail/pkg/domain"
+	"github.com/headmail/headmail/pkg/queue"
 )
 
 // DB defines the interface for a database connection that can provide repositories.
@@ -14,6 +15,8 @@ type DB interface {
 	CampaignRepository() CampaignRepository
 	DeliveryRepository() DeliveryRepository
 	TemplateRepository() TemplateRepository
+	// QueueRepository returns an implementation of a generic queue backed by the DB.
+	QueueRepository() queue.Queue
 }
 
 // Transactionable defines the interface for transaction management.
@@ -59,9 +62,13 @@ type CampaignRepository interface {
 // DeliveryRepository defines the interface for delivery storage.
 type DeliveryRepository interface {
 	Create(ctx context.Context, delivery *domain.Delivery) error
+	BulkCreate(ctx context.Context, deliveries []*domain.Delivery) error
 	GetByID(ctx context.Context, id string) (*domain.Delivery, error)
 	Update(ctx context.Context, delivery *domain.Delivery) error
 	List(ctx context.Context, filter DeliveryFilter, pagination Pagination) ([]*domain.Delivery, int, error)
+	// ListScheduledBefore returns deliveries whose scheduled_at is non-null and <= ts.
+	// The result is limited by `limit`.
+	ListScheduledBefore(ctx context.Context, ts int64, limit int) ([]*domain.Delivery, error)
 	GetByCampaignID(ctx context.Context, campaignID string, pagination Pagination) ([]*domain.Delivery, int, error)
 	UpdateStatus(ctx context.Context, id string, status string) error
 }

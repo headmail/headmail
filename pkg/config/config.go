@@ -44,7 +44,19 @@ type SMTPConfig struct {
 	Send struct {
 		BatchSize int `koanf:"batch_size"`
 		Throttle  int `koanf:"throttle"`
+		Attempts  int `koanf:"attempts"`
 	} `koanf:"send"`
+
+	// Receive settings for mailboxes used to check bounces/feedback
+	Receive struct {
+		Host     string `koanf:"host"`
+		Port     int    `koanf:"port"`
+		Username string `koanf:"username"`
+		Password string `koanf:"password"`
+		Protocol string `koanf:"protocol"` // e.g. "imap", "pop3"
+		TLS      bool   `koanf:"tls"`
+		Mailbox  string `koanf:"mailbox"` // e.g. "INBOX"
+	} `koanf:"receive"`
 }
 
 // DatabaseConfig holds database-related configuration.
@@ -77,6 +89,10 @@ func WithFile(path string) Option {
 	}
 }
 
+var envMappings = map[string]string{
+	"SMTP_SEND_BATCH_SIZE": "smtp.send.batch_size",
+}
+
 // Load loads the configuration using the provided options.
 func Load(opts ...Option) (*Config, error) {
 	k := koanf.New(".")
@@ -94,8 +110,12 @@ func Load(opts ...Option) (*Config, error) {
 
 	// Load environment variables
 	if err := k.Load(env.Provider("HEADMAIL_", ".", func(s string) string {
-		return strings.Replace(strings.ToLower(
-			strings.TrimPrefix(s, "HEADMAIL_")), "_", ".", -1)
+		envKey := strings.TrimPrefix(s, "HEADMAIL_")
+		mapped, ok := envMappings[envKey]
+		if ok {
+			return mapped
+		}
+		return strings.Replace(strings.ToLower(envKey), "_", ".", -1)
 	}), nil); err != nil {
 		return nil, err
 	}

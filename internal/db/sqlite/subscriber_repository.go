@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 	"gorm.io/gorm"
@@ -11,10 +12,10 @@ import (
 )
 
 type subscriberRepository struct {
-	db *gorm.DB
+	db *DB
 }
 
-func NewSubscriberRepository(db *gorm.DB) repository.SubscriberRepository {
+func NewSubscriberRepository(db *DB) repository.SubscriberRepository {
 	return &subscriberRepository{db: db}
 }
 
@@ -68,7 +69,7 @@ func entityToSubscriberDomain(e *Subscriber) *domain.Subscriber {
 
 func (r *subscriberRepository) Create(ctx context.Context, subscriber *domain.Subscriber) error {
 	entity := domainToSubscriberEntity(subscriber)
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 
 	// Create the subscriber first, without the lists
 	subscriberToCreate := &Subscriber{
@@ -100,7 +101,7 @@ func (r *subscriberRepository) Create(ctx context.Context, subscriber *domain.Su
 
 func (r *subscriberRepository) GetByID(ctx context.Context, id string) (*domain.Subscriber, error) {
 	var entity Subscriber
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	if err := db.WithContext(ctx).Preload("Lists").First(&entity, "id = ?", id).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &repository.ErrNotFound{Entity: "Subscriber", ID: id}
@@ -112,7 +113,7 @@ func (r *subscriberRepository) GetByID(ctx context.Context, id string) (*domain.
 
 func (r *subscriberRepository) GetByEmail(ctx context.Context, email string) (*domain.Subscriber, error) {
 	var entity Subscriber
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	if err := db.WithContext(ctx).Preload("Lists").First(&entity, "email = ?", email).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, &repository.ErrNotFound{Entity: "Subscriber", ID: email}
@@ -124,7 +125,7 @@ func (r *subscriberRepository) GetByEmail(ctx context.Context, email string) (*d
 
 func (r *subscriberRepository) Update(ctx context.Context, subscriber *domain.Subscriber) error {
 	entity := domainToSubscriberEntity(subscriber)
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 
 	// Update subscriber basic info
 	if err := db.WithContext(ctx).Model(&Subscriber{}).Where("id = ?", entity.ID).Updates(entity).Error; err != nil {
@@ -149,7 +150,7 @@ func (r *subscriberRepository) Update(ctx context.Context, subscriber *domain.Su
 }
 
 func (r *subscriberRepository) Delete(ctx context.Context, id string) error {
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	if err := db.WithContext(ctx).Delete(&SubscriberList{}, "subscriber_id = ?", id).Error; err != nil {
 		return err
 	}
@@ -163,7 +164,7 @@ func (r *subscriberRepository) List(ctx context.Context, filter repository.Subsc
 	var entities []Subscriber
 	var total int64
 
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&Subscriber{}).Preload("Lists")
 
 	if filter.ListID != "" {
@@ -204,7 +205,7 @@ func (r *subscriberRepository) List(ctx context.Context, filter repository.Subsc
 }
 
 func (r *subscriberRepository) ListStream(ctx context.Context, filter repository.SubscriberFilter) (chan *domain.Subscriber, error) {
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&Subscriber{}).Preload("Lists")
 
 	if filter.ListID != "" {
@@ -243,10 +244,13 @@ func (r *subscriberRepository) ListStream(ctx context.Context, filter repository
 }
 
 func (r *subscriberRepository) BulkUpsert(ctx context.Context, subscribers []*domain.Subscriber) error {
-	db := extractTx(ctx, r.db)
+	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for _, s := range subscribers {
 			// Upsert subscriber
+			if s.ID == "" {
+				s.ID = uuid.NewString()
+			}
 			out := &Subscriber{}
 			result := tx.Where(&Subscriber{
 				Email: s.Email,

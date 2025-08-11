@@ -5,17 +5,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 )
 
 type templateRepository struct {
-	db *gorm.DB
+	db *DB
 }
 
-func NewTemplateRepository(db *gorm.DB) repository.TemplateRepository {
+func NewTemplateRepository(db *DB) repository.TemplateRepository {
 	return &templateRepository{db: db}
 }
 

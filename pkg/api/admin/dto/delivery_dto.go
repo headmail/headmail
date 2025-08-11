@@ -24,7 +24,8 @@ type Individual struct {
 type CreateDeliveriesRequest struct {
 	Lists       []string     `json:"lists"`
 	Individuals []Individual `json:"individuals"`
-	ScheduledAt *int64       `json:"scheduled_at"`
+	// ScheduledAt seconds
+	ScheduledAt *int64 `json:"scheduled_at"`
 }
 
 type CreateDeliveriesResponse struct {

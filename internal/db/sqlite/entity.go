@@ -1,6 +1,9 @@
 package sqlite
 
-import "github.com/headmail/headmail/pkg/domain"
+import (
+	"github.com/headmail/headmail/pkg/domain"
+	"github.com/headmail/headmail/pkg/queue"
+)
 
 // List is the GORM model for a mailing list.
 type List struct {
@@ -65,26 +68,28 @@ type Campaign struct {
 
 // Delivery is the GORM model for a delivery.
 type Delivery struct {
-	ID            string                `gorm:"column:id;primaryKey"`
-	CampaignID    *string               `gorm:"column:campaign_id"`
-	Type          domain.DeliveryType   `gorm:"column:type"`
-	Status        domain.DeliveryStatus `gorm:"column:status"`
-	Name          string                `gorm:"column:name"`
-	Email         string                `gorm:"column:email"`
-	Subject       string                `gorm:"column:subject"`
-	MessageID     *string               `gorm:"column:message_id"`
-	Data          JSON                  `gorm:"column:data;type:json"`
-	Headers       JSON                  `gorm:"column:headers;type:json"`
-	Tags          JSON                  `gorm:"column:tags;type:json"`
-	CreatedAt     int64                 `gorm:"column:created_at"`
-	ScheduledAt   *int64                `gorm:"column:scheduled_at"`
-	SentAt        *int64                `gorm:"column:sent_at"`
-	OpenedAt      *int64                `gorm:"column:opened_at"`
-	FailedAt      *int64                `gorm:"column:failed_at"`
-	FailureReason *string               `gorm:"column:failure_reason"`
-	OpenCount     int                   `gorm:"column:open_count"`
-	ClickCount    int                   `gorm:"column:click_count"`
-	BounceCount   int                   `gorm:"column:bounce_count"`
+	ID              string                `gorm:"column:id;primaryKey"`
+	CampaignID      *string               `gorm:"column:campaign_id"`
+	Type            domain.DeliveryType   `gorm:"column:type"`
+	Status          domain.DeliveryStatus `gorm:"column:status"`
+	Name            string                `gorm:"column:name"`
+	Email           string                `gorm:"column:email"`
+	Subject         string                `gorm:"column:subject"`
+	MessageID       *string               `gorm:"column:message_id"`
+	Data            JSON                  `gorm:"column:data;type:json"`
+	Headers         JSON                  `gorm:"column:headers;type:json"`
+	Tags            JSON                  `gorm:"column:tags;type:json"`
+	CreatedAt       int64                 `gorm:"column:created_at"`
+	ScheduledAt     *int64                `gorm:"column:scheduled_at"`
+	Attempts        int                   `gorm:"column:attempts"`
+	SendScheduledAt *int64                `gorm:"column:send_scheduled_at"`
+	SentAt          *int64                `gorm:"column:sent_at"`
+	OpenedAt        *int64                `gorm:"column:opened_at"`
+	FailedAt        *int64                `gorm:"column:failed_at"`
+	FailureReason   *string               `gorm:"column:failure_reason"`
+	OpenCount       int                   `gorm:"column:open_count"`
+	ClickCount      int                   `gorm:"column:click_count"`
+	BounceCount     int                   `gorm:"column:bounce_count"`
 }
 
 // DeliveryEvent is the GORM model for a delivery event.
@@ -107,4 +112,16 @@ type Template struct {
 	Name      string `gorm:"column:name"`
 	BodyHTML  string `gorm:"column:body_html"`
 	BodyText  string `gorm:"column:body_text"`
+}
+
+// QueueItem is the GORM model for a generic queue entry.
+type QueueItem struct {
+	ID         string       `gorm:"column:id;primaryKey"`
+	Type       string       `gorm:"column:type"`
+	Payload    JSON         `gorm:"column:payload;type:json"`
+	UniqueKey  *string      `gorm:"column:unique_key;uniqueIndex"`
+	Status     queue.Status `gorm:"column:status"`
+	ReservedBy *string      `gorm:"column:reserved_by"`
+	ReservedAt *int64       `gorm:"column:reserved_at"`
+	CreatedAt  int64        `gorm:"column:created_at"`
 }

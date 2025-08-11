@@ -45,6 +45,11 @@
             <div class="flex-1">
               <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ list.name }}</h3>
               <p class="text-sm text-gray-600 overflow-hidden" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{ list.description || '설명이 없습니다' }}</p>
+              <div class="mt-3">
+                <div v-if="list.tags && list.tags.length > 0" class="flex flex-wrap gap-2 mt-2">
+                  <span v-for="tag in list.tags" :key="tag" class="text-xs px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full">{{ tag }}</span>
+                </div>
+              </div>
             </div>
           </div>
           <p class="text-xs text-gray-500">
@@ -167,6 +172,19 @@
                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
                 placeholder="이 리스트에 대한 간단한 설명을 입력하세요..."></textarea>
             </div>
+
+            <div>
+              <label for="tags" class="block text-sm font-semibold text-gray-900 mb-2">
+                태그 (쉼표로 구분)
+              </label>
+              <input
+                v-model="listForm.tags"
+                type="text"
+                id="tags"
+                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                placeholder="예: vip, korea, newsletter"
+              />
+            </div>
           </form>
         </div>
 
@@ -206,6 +224,7 @@ const editingList = ref<List | null>(null);
 const listForm = reactive({
   name: '',
   description: '',
+  tags: '',
 });
 
 const fetchLists = async () => {
@@ -228,10 +247,22 @@ const fetchLists = async () => {
 
 const saveList = async () => {
   try {
+    // normalize tags: comma-separated string -> string[]
+    const tagsArray = (listForm.tags || '')
+      .split(',')
+      .map(t => t.trim())
+      .filter(Boolean);
+
+    const payload: any = {
+      name: listForm.name,
+      description: listForm.description,
+      tags: tagsArray.length > 0 ? tagsArray : undefined,
+    };
+
     if (editingList.value && editingList.value.id) {
-      await updateList(editingList.value.id, listForm);
+      await updateList(editingList.value.id, payload);
     } else {
-      await createList(listForm);
+      await createList(payload);
     }
     fetchLists();
     closeModal();
@@ -244,6 +275,7 @@ const editList = (list: List) => {
   editingList.value = list;
   listForm.name = list.name || '';
   listForm.description = list.description || '';
+  listForm.tags = (list.tags && Array.isArray(list.tags)) ? list.tags.join(', ') : '';
   showCreateModal.value = true;
 };
 
@@ -268,6 +300,7 @@ const closeModal = () => {
   editingList.value = null;
   listForm.name = '';
   listForm.description = '';
+  listForm.tags = '';
 };
 
 onMounted(fetchLists);
