@@ -18,6 +18,7 @@ import (
 	"github.com/headmail/headmail/pkg/api/public"
 	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/db"
+	"github.com/headmail/headmail/pkg/mailer"
 	"github.com/headmail/headmail/pkg/queue"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service" // for worker package in same module
@@ -82,7 +83,11 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 	// Initialize services
 	// create queue from DB provider and pass into delivery service
 	q := srv.db.QueueRepository()
-	srv.deliveryService = service.NewDeliveryService(srv.db, q, cfg.SMTP)
+	// create mailer implementation from config
+	mailerImpl := mailer.NewSMTPMailer(cfg.SMTP)
+	trackingHost := cfg.Server.Public.URL
+	maxAttempts := cfg.SMTP.Send.Attempts
+	srv.deliveryService = service.NewDeliveryService(srv.db, q, mailerImpl, trackingHost, maxAttempts)
 
 	templateService := template.NewService()
 	srv.listService = service.NewListService(srv.db)

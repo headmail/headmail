@@ -3,15 +3,12 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/smtp"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/domain"
+	"github.com/headmail/headmail/pkg/mailer"
 	"github.com/headmail/headmail/pkg/queue"
 	"github.com/headmail/headmail/pkg/repository"
 )
@@ -34,19 +31,23 @@ type DeliveryServiceProvider interface {
 
 // DeliveryService provides business logic for delivery management.
 type DeliveryService struct {
-	db      repository.DB
-	repo    repository.DeliveryRepository
-	queue   queue.Queue
-	smtpCfg config.SMTPConfig
+	db           repository.DB
+	repo         repository.DeliveryRepository
+	queue        queue.Queue
+	mailer       mailer.Mailer
+	trackingHost string
+	maxAttempts  int
 }
 
 // NewDeliveryService creates a new DeliveryService.
-func NewDeliveryService(db repository.DB, q queue.Queue, smtpCfg config.SMTPConfig) *DeliveryService {
+func NewDeliveryService(db repository.DB, q queue.Queue, m mailer.Mailer, trackingHost string, maxAttempts int) *DeliveryService {
 	return &DeliveryService{
-		db:      db,
-		repo:    db.DeliveryRepository(),
-		queue:   q,
-		smtpCfg: smtpCfg,
+		db:           db,
+		repo:         db.DeliveryRepository(),
+		queue:        q,
+		mailer:       m,
+		trackingHost: trackingHost,
+		maxAttempts:  maxAttempts,
 	}
 }
 
@@ -134,12 +135,12 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 		return nil
 	}
 
-	err = s.sendMail(d)
+	err = s.mailer.Send(ctx, d)
 	now := time.Now().Unix()
 	if err != nil {
 		d.FailedAt = &now
 		d.Attempts++
-		if d.Attempts >= s.smtpCfg.Send.Attempts {
+		if d.Attempts >= s.maxAttempts {
 			d.Status = domain.DeliveryStatusFailed
 		} else {
 			d.Status = domain.DeliveryStatusScheduled
@@ -147,7 +148,7 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 			d.SendScheduledAt = &nextScheduledAt
 		}
 
-		log.Printf("worker %s: smtp send failed for delivery %s: %v", workerID, d.ID, err)
+		log.Printf("worker %s: mail send failed for delivery %s: %v", workerID, d.ID, err)
 	} else {
 		d.SentAt = &now
 		d.Status = domain.DeliveryStatusSent
@@ -161,49 +162,7 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 }
 
 func (s *DeliveryService) sendMail(d *domain.Delivery) error {
-	// Build email message
-	fromHeader := fmt.Sprintf("%s <%s>", s.smtpCfg.From.Name, s.smtpCfg.From.Email)
-	toHeader := d.Email
-	subject := d.Subject
-	var body string
-	var contentType string
-	if d.BodyText != "" && d.BodyHTML != "" {
-		// simple prefer HTML
-		contentType = "text/html; charset=\"utf-8\""
-		body = d.BodyHTML
-	} else if d.BodyHTML != "" {
-		contentType = "text/html; charset=\"utf-8\""
-		body = d.BodyHTML
-	} else {
-		contentType = "text/plain; charset=\"utf-8\""
-		body = d.BodyText
-	}
-
-	headers := make(map[string]string)
-	headers["From"] = fromHeader
-	headers["To"] = toHeader
-	headers["Subject"] = subject
-	headers["MIME-Version"] = "1.0"
-	headers["Content-Type"] = contentType
-
-	var msg strings.Builder
-	for k, v := range headers {
-		msg.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
-	}
-	msg.WriteString("\r\n")
-	msg.WriteString(body)
-
-	// Prepare SMTP auth if credentials provided
-	addr := fmt.Sprintf("%s:%d", s.smtpCfg.Host, s.smtpCfg.Port)
-	var auth smtp.Auth
-	if s.smtpCfg.Username != "" {
-		auth = smtp.PlainAuth("", s.smtpCfg.Username, s.smtpCfg.Password, s.smtpCfg.Host)
-	}
-
-	// Attempt to send email (this is the actual send step; errors will be returned to caller)
-	if err := smtp.SendMail(addr, auth, s.smtpCfg.From.Email, []string{d.Email}, []byte(msg.String())); err != nil {
-		return err
-	}
-
-	return nil
+	// Delegate to configured mailer implementation.
+	// Mailer implementations are responsible for building headers/body and sending.
+	return s.mailer.Send(context.Background(), d)
 }
