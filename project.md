@@ -282,7 +282,7 @@ Content-Type: application/json
   "from_email": "noreply@abcstore.com",
   "subject": "{{ i18n . \"ko\" \"summer_sale.subject\" }}",
   "template_html": "<html><body><h1>{{ i18n . \"ko\" \"greeting\" }} {{ .name }}!</h1><p>{{ i18n . \"ko\" \"summer_sale.body\" }}</p></body></html>",
-  "template_text": "{{ i18n \"ko\" .locale \"greeting\" }} {{ .name }}! {{ i18n . \"ko\" \"summer_sale.body\" }}",
+  "template_text": "{{ i18n \"ko\" \"greeting\" }} {{ .name }}! {{ i18n . \"ko\" \"summer_sale.body\" }}",
   "data": {
     "i18n": {
       "ko": {
@@ -442,7 +442,6 @@ Content-Type: application/json
   "lists": ["6a88c571-f674-40a2-bdd6-de43a082d489", "6270d21f-805a-43d3-9bd1-544ca306d604"],
   "individuals": [
     {
-      "listId": "d6172ca8-5e32-40e1-84e7-32af869c9f1c", // 해당 list 에 subscriber upsert
       "name": "VIP 고객",
       "email": "vip@example.com",
       "data": {
@@ -572,10 +571,10 @@ Content-Type: application/json
     "name": "홍길동",
     "email": "user@example.com"
   },
-  "subject": "{{ i18n . .locale \"otp.subject\" }}",
+  "subject": "{{ i18n . \"otp.subject\" }}",
   "template": {
-    "html": "<html><body><h1>{{ i18n . .locale \"otp.title\" }}</h1><p>{{ i18n . .locale \"otp.message\" }}: <strong>{{ .otp }}</strong></p></body></html>",
-    "text": "{{ i18n . .locale \"otp.title\" }}\n{{ i18n . .locale \"otp.message\" }}: {{ .otp }}"
+    "html": "<html><body><h1>{{ i18n . \"otp.title\" }}</h1><p>{{ i18n . \"otp.message\" }}: <strong>{{ .otp }}</strong></p></body></html>",
+    "text": "{{ i18n . \"otp.title\" }}\n{{ i18n . \"otp.message\" }}: {{ .otp }}"
   },
   "data": {
     "otp": "123456",

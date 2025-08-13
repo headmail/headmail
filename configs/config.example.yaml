@@ -9,13 +9,13 @@ server:
     port: 8081
   
 smtp:
-  host: "smtp.gmail.com"
+  host: "mail.example.com"
   port: 587
-  username: "user@example.com"
-  password: "mail-password"
+  username: "no-reply@example.com"
+  password: "password"
   from:
-    name: "Example Service"
-    email: "noreply@example.com"
+    name: "no reply"
+    email: "no-reply@example.com"
   send:
     batch_size: 100 # Number of emails to send in a batch
     throttle: 50    # Maximum emails per second
