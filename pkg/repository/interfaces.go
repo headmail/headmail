@@ -17,6 +17,8 @@ type DB interface {
 	TemplateRepository() TemplateRepository
 	// QueueRepository returns an implementation of a generic queue backed by the DB.
 	QueueRepository() queue.Queue
+	// EventRepository returns an implementation for storing delivery events (opens/clicks).
+	EventRepository() EventRepository
 }
 
 // Transactionable defines the interface for transaction management.
@@ -89,6 +91,17 @@ type TemplateRepository interface {
 	Update(ctx context.Context, template *domain.Template) error
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, pagination Pagination) ([]*domain.Template, int, error)
+}
+
+// EventRepository defines the interface for delivery event storage (opens, clicks, etc).
+type EventRepository interface {
+	// Create stores a new delivery event.
+	Create(ctx context.Context, event *domain.DeliveryEvent) error
+	// ListByCampaignAndRange returns events for given campaign IDs within [from, to] (unix timestamps).
+	ListByCampaignAndRange(ctx context.Context, campaignIDs []string, from int64, to int64) ([]*domain.DeliveryEvent, error)
+	// CountByCampaignAndRange returns aggregated event counts grouped by campaign and bucket time.
+	// Implementations may provide optimized aggregation helpers if needed.
+	CountByCampaignAndRange(ctx context.Context, campaignIDs []string, from int64, to int64, granularity string) (map[string]map[int64]int64, error)
 }
 
 // Filter Types

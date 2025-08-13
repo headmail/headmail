@@ -16,6 +16,7 @@ import (
 type Config struct {
 	Server   ServerConfig   `koanf:"server"`
 	SMTP     SMTPConfig     `koanf:"smtp"`
+	Tracking TrackingConfig `koanf:"tracking"`
 	Database DatabaseConfig `koanf:"database"`
 }
 
@@ -57,6 +58,13 @@ type SMTPConfig struct {
 		TLS      bool   `koanf:"tls"`
 		Mailbox  string `koanf:"mailbox"` // e.g. "INBOX"
 	} `koanf:"receive"`
+}
+
+// TrackingConfig holds tracking-related configuration.
+type TrackingConfig struct {
+	// ImagePath is an optional path or URL to a tracking image to return for opens.
+	// If empty, a built-in 1x1 transparent PNG will be returned.
+	ImagePath string `koanf:"image_path"`
 }
 
 // DatabaseConfig holds database-related configuration.

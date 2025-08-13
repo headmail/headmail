@@ -67,6 +67,10 @@ func (db *DB) QueueRepository() queue.Queue {
 	return NewQueueRepository(db)
 }
 
+func (db *DB) EventRepository() repository.EventRepository {
+	return NewEventRepository(db)
+}
+
 func (db *DB) Begin(ctx context.Context) (context.Context, error) {
 	tx := db.DB.Begin()
 	if tx.Error != nil {
