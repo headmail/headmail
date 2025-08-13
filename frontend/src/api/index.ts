@@ -148,3 +148,29 @@ export const deleteTemplate = async (templateID: string) => {
     const resp = await DELETE("/templates/{templateID}", {params: {path: {templateID}}});
     return resp.data;
 };
+
+// Subscribers of a specific list
+export const getSubscribersOfList = async (listID: string, params?: paths["/lists/{listID}/subscribers"]["get"]["parameters"]["query"]) => {
+    const resp = await GET("/lists/{listID}/subscribers", { params: { path: { listID }, query: params }});
+    return resp.data;
+};
+
+// Patch subscribers in a list (add/remove)
+export const patchListSubscribers = async (listID: string, req: paths["/lists/{listID}/subscribers"]["patch"]["requestBody"]["content"]["application/json"]) => {
+    const resp = await (createClient<paths>({ baseUrl: "/api" })).PATCH("/lists/{listID}/subscribers", {
+        params: { path: { listID } },
+        body: req,
+        headers: { "Content-Type": "application/json" },
+    });
+    return resp.data;
+};
+
+// Replace subscribers in a list (atomic)
+export const replaceListSubscribers = async (listID: string, req: paths["/lists/{listID}/subscribers"]["put"]["requestBody"]["content"]["application/json"]) => {
+    const resp = await (createClient<paths>({ baseUrl: "/api" })).PUT("/lists/{listID}/subscribers", {
+        params: { path: { listID } },
+        body: req,
+        headers: { "Content-Type": "application/json" },
+    });
+    return resp.data;
+};

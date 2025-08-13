@@ -23,6 +23,12 @@ type ListServiceProvider interface {
 	UpdateSubscriber(ctx context.Context, subscriber *domain.Subscriber) error
 	DeleteSubscriber(ctx context.Context, id string) error
 	ListSubscribers(ctx context.Context, filter repository.SubscriberFilter, pagination repository.Pagination) ([]*domain.Subscriber, int, error)
+
+	// Patch subscribers in a list: add/remove sets of subscriber IDs
+	PatchSubscribersInList(ctx context.Context, listID string, add []string, remove []string) error
+
+	// Replace subscribers in a list atomically
+	ReplaceSubscribersInList(ctx context.Context, listID string, subscriberIDs []string) error
 }
 
 // ListService provides business logic for list management.
@@ -112,4 +118,29 @@ func (s *ListService) DeleteSubscriber(ctx context.Context, id string) error {
 // ListSubscribers lists all subscribers for a list.
 func (s *ListService) ListSubscribers(ctx context.Context, filter repository.SubscriberFilter, pagination repository.Pagination) ([]*domain.Subscriber, int, error) {
 	return s.subscriberRepo.List(ctx, filter, pagination)
+}
+
+// PatchSubscribersInList adds/removes subscribers from a list within a transaction.
+func (s *ListService) PatchSubscribersInList(ctx context.Context, listID string, add []string, remove []string) error {
+	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
+		// Remove first, then add to avoid unique conflicts and to implement requested semantics.
+		if len(remove) > 0 {
+			if err := s.listRepo.RemoveSubscribers(txCtx, listID, remove); err != nil {
+				return err
+			}
+		}
+		if len(add) > 0 {
+			if err := s.listRepo.AddSubscribers(txCtx, listID, add); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// ReplaceSubscribersInList replaces all subscribers for a list atomically.
+func (s *ListService) ReplaceSubscribersInList(ctx context.Context, listID string, subscriberIDs []string) error {
+	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
+		return s.listRepo.ReplaceSubscribers(txCtx, listID, subscriberIDs)
+	})
 }

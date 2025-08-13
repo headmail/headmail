@@ -35,6 +35,15 @@ type ListRepository interface {
 	List(ctx context.Context, filter ListFilter, pagination Pagination) ([]*domain.List, int, error)
 	GetSubscriberCount(ctx context.Context, listID string) (int, error)
 	GetSubscribers(ctx context.Context) (chan *domain.Subscriber, error)
+
+	// AddSubscribers adds existing subscribers to the specified list (ids).
+	AddSubscribers(ctx context.Context, listID string, subscriberIDs []string) error
+
+	// RemoveSubscribers removes subscribers from the specified list.
+	RemoveSubscribers(ctx context.Context, listID string, subscriberIDs []string) error
+
+	// ReplaceSubscribers replaces the subscribers of the given list with the provided list (atomic).
+	ReplaceSubscribers(ctx context.Context, listID string, subscriberIDs []string) error
 }
 
 // SubscriberRepository defines the interface for subscriber storage.

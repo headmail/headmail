@@ -236,10 +236,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { getSubscribers, updateSubscriber, deleteSubscriber, getLists } from '../../api';
+import { getSubscribers, updateSubscriber, deleteSubscriber, getLists, patchListSubscribers } from '../../api';
 import type { Subscriber, List, PaginationResponse } from '../../types';
-import type { definitions } from '../../generated/api-types';
 import Pagination from '../../components/Pagination.vue';
+import ListPickerModal from '../../components/ListPickerModal.vue';
 
 const subscribers = ref<Subscriber[]>([]);
 const lists = ref<List[]>([]);
@@ -254,7 +254,7 @@ const editingSubscriber = ref<Subscriber | null>(null);
 const subscriberForm = reactive({
   email: '',
   name: '',
-  status: 'enabled' as definitions['domain.SubscriberStatus'],
+  status: 'enabled' as string,
   list_id: '',
 });
 
@@ -337,7 +337,48 @@ const closeModal = () => {
   subscriberForm.list_id = '';
 };
 
-const getStatusBadgeClass = (status: definitions['domain.SubscriberStatus'] | undefined) => {
+//
+// List management modal for a subscriber
+//
+const showListModal = ref(false);
+const modalSubscriberId = ref<string | null>(null);
+const modalInitialSelectedLists = ref<string[] | null>(null);
+
+const manageLists = (subscriber: Subscriber) => {
+  modalSubscriberId.value = subscriber.id || null;
+  modalInitialSelectedLists.value = (subscriber.lists || []).map((l: any) => l.list_id);
+  showListModal.value = true;
+};
+
+const onListPickerConfirmed = async (selected: any[]) => {
+  if (!modalSubscriberId.value) return;
+  const subscriberId = modalSubscriberId.value;
+  const selectedIds = selected.map((s: any) => s.id);
+  const currentIds = modalInitialSelectedLists.value || [];
+
+  const toAdd = selectedIds.filter((id: string) => !currentIds.includes(id));
+  const toRemove = currentIds.filter((id: string) => !selectedIds.includes(id));
+
+  try {
+    // For each list to add, call patchListSubscribers to add this subscriber
+    for (const listID of toAdd) {
+      await patchListSubscribers(listID, { add: [subscriberId], remove: [] });
+    }
+    // For each list to remove, call patchListSubscribers to remove this subscriber
+    for (const listID of toRemove) {
+      await patchListSubscribers(listID, { add: [], remove: [subscriberId] });
+    }
+    await fetchSubscribers();
+  } catch (err) {
+    console.error('Failed to update subscriber lists', err);
+  } finally {
+    showListModal.value = false;
+    modalSubscriberId.value = null;
+    modalInitialSelectedLists.value = null;
+  }
+};
+
+const getStatusBadgeClass = (status: string | undefined) => {
   switch (status) {
     case 'enabled':
       return 'bg-green-100 text-green-800';
@@ -348,7 +389,7 @@ const getStatusBadgeClass = (status: definitions['domain.SubscriberStatus'] | un
   }
 };
 
-const getStatusText = (status: definitions['domain.SubscriberStatus'] | undefined) => {
+const getStatusText = (status: string | undefined) => {
   switch (status) {
     case 'enabled':
       return '활성';
@@ -361,7 +402,7 @@ const getStatusText = (status: definitions['domain.SubscriberStatus'] | undefine
 
 const getListName = (listId: string | undefined) => {
   if (!listId) return '리스트 없음';
-  const list = lists.value.find(l => l.id === listId);
+  const list = lists.value.find((l: List) => l.id === listId);
   return list?.name || '알 수 없음';
 };
 
@@ -369,11 +410,11 @@ const getListNames = (subscriberLists: any[] | undefined) => {
   if (!subscriberLists || subscriberLists.length === 0) return '리스트 없음';
   
   const listNames = subscriberLists
-    .map(sl => {
-      const list = lists.value.find(l => l.id === sl.list_id);
+    .map((sl: any) => {
+      const list = lists.value.find((li: List) => li.id === sl.list_id);
       return list?.name || '알 수 없음';
     })
-    .filter(name => name !== '알 수 없음');
+    .filter((name: string) => name !== '알 수 없음');
   
   return listNames.length > 0 ? listNames.join(', ') : '리스트 없음';
 };

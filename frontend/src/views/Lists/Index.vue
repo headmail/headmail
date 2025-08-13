@@ -73,7 +73,15 @@
           
           <!-- Actions -->
           <div class="flex justify-between items-center">
-            <div class="flex space-x-2">
+              <div class="flex space-x-2">
+              <button 
+                @click="manageSubscribers(list)"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-sky-600 bg-sky-50 rounded-lg hover:bg-sky-100 transition-colors duration-200">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"></path>
+                </svg>
+                구독자 관리
+              </button>
               <button 
                 @click="editList(list)"
                 class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors duration-200">
@@ -204,14 +212,21 @@
         </div>
       </div>
     </div>
-  </div>
+    <SubscriberPickerModal
+    :modelValue="showSubscriberModal"
+    :initialSelected="modalInitialSelected"
+    @update:modelValue="val => showSubscriberModal = val"
+    @confirmed="onSubscriberPickerConfirmed"
+  />
+</div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { getLists, createList, updateList, deleteList } from '../../api';
+import { getLists, createList, updateList, deleteList, getSubscribersOfList, patchListSubscribers } from '../../api';
 import type { List, PaginationResponse } from '../../types';
 import Pagination from '../../components/Pagination.vue';
+import SubscriberPickerModal from '../../components/SubscriberPickerModal.vue';
 
 const lists = ref<List[]>([]);
 const pagination = ref<PaginationResponse | null>(null);
@@ -301,6 +316,57 @@ const closeModal = () => {
   listForm.name = '';
   listForm.description = '';
   listForm.tags = '';
+};
+
+//
+// Subscriber management modal for a list
+//
+const showSubscriberModal = ref(false);
+const modalListId = ref<string | null>(null);
+const modalInitialSelected = ref<string[] | null>(null);
+
+// manageSubscribers opens the subscriber picker for a list, preloading current subscribers.
+const manageSubscribers = async (list: List) => {
+  modalListId.value = list.id;
+  try {
+    const res = await getSubscribersOfList(list.id, { page: 1, limit: 1000 });
+    if (res && typeof res === 'object' && 'data' in res) {
+      const data = (res as any).data || [];
+      modalInitialSelected.value = data.map((s: any) => s.id);
+    } else {
+      modalInitialSelected.value = [];
+    }
+  } catch (err) {
+    console.error('Failed to load list subscribers', err);
+    modalInitialSelected.value = [];
+  }
+  showSubscriberModal.value = true;
+};
+
+// onSubscriberPickerConfirmed applies changes (add/remove) using PATCH endpoint.
+const onSubscriberPickerConfirmed = async (selected: any[]) => {
+  if (!modalListId.value) return;
+  const selectedIds = selected.map(s => s.id);
+  const currentIds = modalInitialSelected.value || [];
+  const toAdd = selectedIds.filter((id: string) => !currentIds.includes(id));
+  const toRemove = currentIds.filter((id: string) => !selectedIds.includes(id));
+
+  try {
+    if (toRemove.length > 0) {
+      await patchListSubscribers(modalListId.value, { add: [], remove: toRemove });
+    }
+    if (toAdd.length > 0) {
+      await patchListSubscribers(modalListId.value, { add: toAdd, remove: [] });
+    }
+    // refresh list counts
+    fetchLists();
+  } catch (err) {
+    console.error('Failed to update list subscribers', err);
+  } finally {
+    showSubscriberModal.value = false;
+    modalListId.value = null;
+    modalInitialSelected.value = null;
+  }
 };
 
 onMounted(fetchLists);

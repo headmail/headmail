@@ -3,9 +3,10 @@ package admin
 import (
 	"encoding/json"
 	"errors"
-	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"net/http"
 	"strconv"
+
+	"github.com/headmail/headmail/pkg/api/admin/dto"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/headmail/headmail/pkg/domain"
@@ -25,10 +26,6 @@ func NewSubscriberHandler(service service.ListServiceProvider) *SubscriberHandle
 
 // RegisterRoutes registers the subscriber routes to the router.
 func (h *SubscriberHandler) RegisterRoutes(r chi.Router) {
-	r.Route("/lists/{listID}/subscribers", func(r chi.Router) {
-		r.Post("/", h.addSubscriber)
-		r.Get("/", h.listSubscribersOfList)
-	})
 	r.Get("/subscribers", h.listSubscribers)
 	r.Route("/subscribers/{subscriberID}", func(r chi.Router) {
 		r.Get("/", h.getSubscriber)

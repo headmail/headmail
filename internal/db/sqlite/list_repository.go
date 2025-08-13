@@ -3,9 +3,12 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // listRepository implements the repository.ListRepository interface.
@@ -151,4 +154,67 @@ func (r *listRepository) GetSubscribers(ctx context.Context) (chan *domain.Subsc
 	}()
 
 	return subscribersChan, nil
+}
+
+// AddSubscribers adds existing subscribers to the specified list.
+// It will ignore duplicates.
+func (r *listRepository) AddSubscribers(ctx context.Context, listID string, subscriberIDs []string) error {
+	if len(subscriberIDs) == 0 {
+		return nil
+	}
+	now := time.Now().Unix()
+	db := extractTx(ctx, r.db.DB)
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, sid := range subscriberIDs {
+			sl := &SubscriberList{
+				SubscriberID: sid,
+				ListID:       listID,
+				Status:       domain.SubscriberListStatusConfirmed,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+			}
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "subscriber_id"}, {Name: "list_id"}},
+				DoNothing: true,
+			}).Create(sl).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// RemoveSubscribers removes subscribers from the specified list.
+func (r *listRepository) RemoveSubscribers(ctx context.Context, listID string, subscriberIDs []string) error {
+	if len(subscriberIDs) == 0 {
+		return nil
+	}
+	db := extractTx(ctx, r.db.DB)
+	return db.WithContext(ctx).Where("list_id = ? AND subscriber_id IN ?", listID, subscriberIDs).Delete(&SubscriberList{}).Error
+}
+
+// ReplaceSubscribers replaces the subscribers of the given list with the provided list (atomic).
+func (r *listRepository) ReplaceSubscribers(ctx context.Context, listID string, subscriberIDs []string) error {
+	db := extractTx(ctx, r.db.DB)
+	now := time.Now().Unix()
+	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Delete all current associations for the list
+		if err := tx.Where("list_id = ?", listID).Delete(&SubscriberList{}).Error; err != nil {
+			return err
+		}
+		// Insert new associations
+		for _, sid := range subscriberIDs {
+			sl := &SubscriberList{
+				SubscriberID: sid,
+				ListID:       listID,
+				Status:       domain.SubscriberListStatusConfirmed,
+				CreatedAt:    now,
+				UpdatedAt:    now,
+			}
+			if err := tx.Create(sl).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
