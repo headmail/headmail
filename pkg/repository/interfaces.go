@@ -102,6 +102,9 @@ type EventRepository interface {
 	// CountByCampaignAndRange returns aggregated event counts grouped by campaign and bucket time.
 	// Implementations may provide optimized aggregation helpers if needed.
 	CountByCampaignAndRange(ctx context.Context, campaignIDs []string, from int64, to int64, granularity string) (map[string]map[int64]int64, error)
+
+	// CountByCampaignAndRangeByType returns aggregated event counts filtered by event_type grouped by campaign and bucket time.
+	CountByCampaignAndRangeByType(ctx context.Context, campaignIDs []string, eventType string, from int64, to int64, granularity string) (map[string]map[int64]int64, error)
 }
 
 // Filter Types

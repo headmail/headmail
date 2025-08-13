@@ -128,3 +128,40 @@ func (r *eventRepository) CountByCampaignAndRange(ctx context.Context, campaignI
 	}
 	return result, nil
 }
+
+// CountByCampaignAndRangeByType returns aggregated event counts filtered by event_type
+// grouped by campaign and bucket time.
+func (r *eventRepository) CountByCampaignAndRangeByType(ctx context.Context, campaignIDs []string, eventType string, from int64, to int64, granularity string) (map[string]map[int64]int64, error) {
+	db := extractTx(ctx, r.db.DB)
+
+	var bucketSeconds int64 = 3600
+	if granularity == "day" {
+		bucketSeconds = 86400
+	}
+
+	rows, err := db.WithContext(ctx).Raw(
+		`SELECT deliveries.campaign_id, ((delivery_events.created_at / ?) * ?) as bucket, COUNT(*) as cnt
+		 FROM delivery_events
+		 JOIN deliveries ON deliveries.id = delivery_events.delivery_id
+		 WHERE deliveries.campaign_id IN ? AND delivery_events.event_type = ? AND delivery_events.created_at BETWEEN ? AND ?
+		 GROUP BY deliveries.campaign_id, bucket`, bucketSeconds, bucketSeconds, campaignIDs, eventType, from, to).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := map[string]map[int64]int64{}
+	for rows.Next() {
+		var campaignID string
+		var bucket int64
+		var cnt int64
+		if err := rows.Scan(&campaignID, &bucket, &cnt); err != nil {
+			return nil, err
+		}
+		if _, ok := result[campaignID]; !ok {
+			result[campaignID] = map[int64]int64{}
+		}
+		result[campaignID][bucket] = cnt
+	}
+	return result, nil
+}
