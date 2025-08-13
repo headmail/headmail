@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/headmail/headmail/pkg/api/admin"
+	"github.com/headmail/headmail/pkg/api/public"
 	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/db"
 	"github.com/headmail/headmail/pkg/queue"
@@ -125,7 +126,8 @@ func (s *Server) registerAdminRoutes() {
 }
 
 func (s *Server) registerPublicRoutes() {
-	// TODO: Add public routes
+	// Public tracking routes (open / click)
+	public.RegisterRoutes(s.publicRouter, s.db, s.cfg)
 }
 
 // Serve starts the admin and public API servers.
