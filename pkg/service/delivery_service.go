@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -135,6 +138,10 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 		return nil
 	}
 
+	// inject tracking into HTML before sending (rewrite links + add tracking pixel)
+	if d.BodyHTML != "" && s.trackingHost != "" {
+		d.BodyHTML = s.injectTracking(d.ID, d.BodyHTML)
+	}
 	err = s.mailer.Send(ctx, d)
 	now := time.Now().Unix()
 	if err != nil {
@@ -165,4 +172,38 @@ func (s *DeliveryService) sendMail(d *domain.Delivery) error {
 	// Delegate to configured mailer implementation.
 	// Mailer implementations are responsible for building headers/body and sending.
 	return s.mailer.Send(context.Background(), d)
+}
+
+// injectTracking rewrites all links in the provided HTML to route through the click
+// tracker and appends an open-tracking 1x1 image pointing to the open tracker.
+func (s *DeliveryService) injectTracking(deliveryID, html string) string {
+	// rewrite links: href="..." -> href="https://{host}/r/{deliveryID}/c?u={urlencoded}"
+	re := regexp.MustCompile(`(?i)href="([^"#]+[^"]*)"`)
+	newHTML := re.ReplaceAllStringFunc(html, func(m string) string {
+		matches := re.FindStringSubmatch(m)
+		if len(matches) < 2 {
+			return m
+		}
+		orig := matches[1]
+		encoded := url.QueryEscape(orig)
+		trackingURL := s.trackingHost
+		// ensure scheme present in trackingHost
+		if !strings.HasPrefix(trackingURL, "http://") && !strings.HasPrefix(trackingURL, "https://") {
+			trackingURL = "https://" + strings.TrimRight(trackingURL, "/")
+		}
+		newHref := trackingURL + "/r/" + deliveryID + "/c?u=" + encoded
+		return `href="` + newHref + `"`
+	})
+
+	// append tracking pixel before </body> or at end
+	pixelURL := s.trackingHost
+	if !strings.HasPrefix(pixelURL, "http://") && !strings.HasPrefix(pixelURL, "https://") {
+		pixelURL = "https://" + strings.TrimRight(pixelURL, "/")
+	}
+	pixel := `<img src="` + pixelURL + `/r/` + deliveryID + `/o" width="1" height="1" style="display:none" alt="">`
+
+	if idx := strings.LastIndex(strings.ToLower(newHTML), "</body>"); idx != -1 {
+		return newHTML[:idx] + pixel + newHTML[idx:]
+	}
+	return newHTML + pixel
 }
