@@ -20,6 +20,7 @@ import (
 	"github.com/headmail/headmail/pkg/db"
 	"github.com/headmail/headmail/pkg/mailer"
 	"github.com/headmail/headmail/pkg/queue"
+	"github.com/headmail/headmail/pkg/receiver"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service" // for worker package in same module
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -169,6 +170,16 @@ func (s *Server) Serve() {
 	hostname, _ := os.Hostname()
 	go worker.Start(context.Background(), hostname+":"+uuid.NewString())
 
+	// start IMAP receiver for bounce processing if configured
+	imapReceiver := receiver.NewIMAPReceiver(s.cfg.SMTP, s.db)
+	if imapReceiver != nil {
+		go func() {
+			if err := imapReceiver.Start(context.Background()); err != nil {
+				log.Printf("imap receiver failed to start: %v", err)
+			}
+		}()
+	}
+
 	go func() {
 		log.Printf("Starting admin server on port %d", s.cfg.Server.Admin.Port)
 		if err := s.adminServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -226,9 +237,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	}
 
 	if len(errs) > 0 {
-		// In a real app, you might want to join these errors.
+		// Return first error; could be aggregated if desired.
 		return errs[0]
 	}
-
 	return nil
 }
