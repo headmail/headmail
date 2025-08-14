@@ -21,6 +21,10 @@ type CampaignServiceProvider interface {
 	ListCampaigns(ctx context.Context, filter repository.CampaignFilter, pagination repository.Pagination) ([]*domain.Campaign, int, error)
 	UpdateCampaignStatus(ctx context.Context, id string, status domain.CampaignStatus) error
 	CreateDeliveries(ctx context.Context, campaignID string, req *dto.CreateDeliveriesRequest) (int, error)
+
+	// GetCampaignStats returns time-bucketed opens and clicks for given campaign IDs.
+	// granularity: "hour" or "day"
+	GetCampaignStats(ctx context.Context, campaignIDs []string, from time.Time, to time.Time, granularity string) (map[string]interface{}, error)
 }
 
 // CampaignService provides business logic for campaign management.
@@ -237,4 +241,79 @@ func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campai
 		SendScheduledAt: scheduledAt,
 	}
 	return delivery, nil
+}
+
+// GetCampaignStats aggregates open and click counts per time bucket for the given campaigns.
+// Returns a map with keys:
+// - "labels": []int64 (bucket start unix timestamps)
+// - "series": []{ "campaign_id": string, "opens": []int64, "clicks": []int64 }
+func (s *CampaignService) GetCampaignStats(ctx context.Context, campaignIDs []string, from time.Time, to time.Time, granularity string) (map[string]interface{}, error) {
+	fromTs := from.Unix()
+	toTs := to.Unix()
+
+	opens, err := s.db.EventRepository().CountByCampaignAndRangeByType(ctx, campaignIDs, string(domain.EventTypeOpened), fromTs, toTs, granularity)
+	if err != nil {
+		return nil, err
+	}
+	clicks, err := s.db.EventRepository().CountByCampaignAndRangeByType(ctx, campaignIDs, string(domain.EventTypeClicked), fromTs, toTs, granularity)
+	if err != nil {
+		return nil, err
+	}
+
+	// collect all bucket timestamps
+	bucketSet := map[int64]struct{}{}
+	for _, m := range []map[string]map[int64]int64{opens, clicks} {
+		for _, cmap := range m {
+			for b := range cmap {
+				bucketSet[b] = struct{}{}
+			}
+		}
+	}
+	// produce sorted labels
+	labels := make([]int64, 0, len(bucketSet))
+	for b := range bucketSet {
+		labels = append(labels, b)
+	}
+	// sort
+	for i := 0; i < len(labels); i++ {
+		for j := i + 1; j < len(labels); j++ {
+			if labels[i] > labels[j] {
+				labels[i], labels[j] = labels[j], labels[i]
+			}
+		}
+	}
+
+	series := make([]map[string]interface{}, 0, len(campaignIDs))
+	for _, cid := range campaignIDs {
+		openSeries := make([]int64, len(labels))
+		clickSeries := make([]int64, len(labels))
+		if m, ok := opens[cid]; ok {
+			for i, b := range labels {
+				if v, ok2 := m[b]; ok2 {
+					openSeries[i] = v
+				} else {
+					openSeries[i] = 0
+				}
+			}
+		}
+		if m, ok := clicks[cid]; ok {
+			for i, b := range labels {
+				if v, ok2 := m[b]; ok2 {
+					clickSeries[i] = v
+				} else {
+					clickSeries[i] = 0
+				}
+			}
+		}
+		series = append(series, map[string]interface{}{
+			"campaign_id": cid,
+			"opens":       openSeries,
+			"clicks":      clickSeries,
+		})
+	}
+
+	return map[string]interface{}{
+		"labels": labels,
+		"series": series,
+	}, nil
 }
