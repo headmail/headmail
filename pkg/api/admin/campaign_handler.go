@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/headmail/headmail/pkg/api/admin/dto"
 
@@ -37,6 +39,8 @@ func (h *CampaignHandler) RegisterRoutes(r chi.Router) {
 	r.Delete("/campaigns/{campaignID}", h.deleteCampaign)
 	r.Patch("/campaigns/{campaignID}/status", h.updateCampaignStatus)
 	r.Post("/campaigns/{campaignID}/deliveries", h.createCampaignDeliveries)
+	r.Get("/campaigns/stats", h.getCampaignsStats)
+	r.Get("/campaigns/{campaignID}/stats", h.getCampaignStats)
 }
 
 // @Summary Create a new campaign
@@ -274,4 +278,82 @@ func (h *CampaignHandler) createCampaignDeliveries(w http.ResponseWriter, r *htt
 	}
 
 	writeJson(w, http.StatusCreated, resp)
+}
+
+// parseFromTo parses 'from' and 'to' query params as unix seconds. Returns defaults if not provided.
+func parseFromTo(r *http.Request) (time.Time, time.Time, error) {
+	now := time.Now()
+	fromStr := r.URL.Query().Get("from")
+	toStr := r.URL.Query().Get("to")
+	var from time.Time
+	var to time.Time
+	if fromStr == "" {
+		// default: 24h ago
+		from = now.Add(-24 * time.Hour)
+	} else {
+		ts, err := strconv.ParseInt(fromStr, 10, 64)
+		if err != nil {
+			return time.Time{}, time.Time{}, err
+		}
+		from = time.Unix(ts, 0)
+	}
+	if toStr == "" {
+		to = now
+	} else {
+		ts, err := strconv.ParseInt(toStr, 10, 64)
+		if err != nil {
+			return time.Time{}, time.Time{}, err
+		}
+		to = time.Unix(ts, 0)
+	}
+	return from, to, nil
+}
+
+// getCampaignsStats handles GET /campaigns/stats?campaign_ids=cid1,cid2&from=...&to=...&granularity=hour|day
+func (h *CampaignHandler) getCampaignsStats(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("campaign_ids")
+	if q == "" {
+		http.Error(w, "missing campaign_ids query param", http.StatusBadRequest)
+		return
+	}
+	campaignIDs := strings.Split(q, ",")
+	from, to, err := parseFromTo(r)
+	if err != nil {
+		http.Error(w, "invalid from/to params", http.StatusBadRequest)
+		return
+	}
+	gran := r.URL.Query().Get("granularity")
+	if gran == "" {
+		gran = "hour"
+	}
+	stats, err := h.service.GetCampaignStats(r.Context(), campaignIDs, from, to, gran)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJson(w, http.StatusOK, stats)
+}
+
+// getCampaignStats handles GET /campaigns/{campaignID}/stats?from=...&to=...&granularity=hour|day
+func (h *CampaignHandler) getCampaignStats(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignID")
+	if campaignID == "" {
+		http.Error(w, "missing campaignID path param", http.StatusBadRequest)
+		return
+	}
+	from, to, err := parseFromTo(r)
+	if err != nil {
+		http.Error(w, "invalid from/to params", http.StatusBadRequest)
+		return
+	}
+	gran := r.URL.Query().Get("granularity")
+	if gran == "" {
+		gran = "hour"
+	}
+	stats, err := h.service.GetCampaignStats(r.Context(), []string{campaignID}, from, to, gran)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJson(w, http.StatusOK, stats)
 }
