@@ -10,6 +10,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	http_swagger "github.com/headmail/headmail/internal/http-swagger"
+	"github.com/headmail/headmail/internal/mail/imap"
+	"github.com/headmail/headmail/internal/mail/smtp"
+	"github.com/headmail/headmail/pkg/mailer"
+	"github.com/headmail/headmail/pkg/receiver"
 	"github.com/headmail/headmail/pkg/template"
 
 	"github.com/go-chi/chi/v5"
@@ -18,12 +23,9 @@ import (
 	"github.com/headmail/headmail/pkg/api/public"
 	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/db"
-	"github.com/headmail/headmail/pkg/mailer"
 	"github.com/headmail/headmail/pkg/queue"
-	"github.com/headmail/headmail/pkg/receiver"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service" // for worker package in same module
-	httpSwagger "github.com/swaggo/http-swagger"
 
 	// Import providers to register them
 	_ "github.com/headmail/headmail/internal/db/sqlite"
@@ -31,8 +33,12 @@ import (
 
 // Server holds the dependencies for an HTTP server.
 type Server struct {
-	cfg          *config.Config
-	db           repository.DB
+	cfg *config.Config
+	db  repository.DB
+
+	mailer   mailer.Mailer
+	receiver receiver.Receiver
+
 	adminRouter  *chi.Mux
 	publicRouter *chi.Mux
 	adminServer  *http.Server
@@ -52,6 +58,18 @@ type Option func(*Server)
 func WithDB(db repository.DB) Option {
 	return func(s *Server) {
 		s.db = db
+	}
+}
+
+func WithMailer(m mailer.Mailer) Option {
+	return func(s *Server) {
+		s.mailer = m
+	}
+}
+
+func WithReceiver(r receiver.Receiver) Option {
+	return func(s *Server) {
+		s.receiver = r
 	}
 }
 
@@ -81,14 +99,20 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 		srv.db = dbConn
 	}
 
+	if srv.mailer == nil && len(cfg.SMTP.Host) > 0 {
+		srv.mailer = smtp.NewMailer(cfg.SMTP)
+	}
+	if srv.receiver == nil && len(cfg.IMAP.Host) > 0 {
+		srv.receiver = imap.NewReceiver(&cfg.IMAP)
+	}
+
 	// Initialize services
 	// create queue from DB provider and pass into delivery service
 	q := srv.db.QueueRepository()
 	// create mailer implementation from config
-	mailerImpl := mailer.NewSMTPMailer(cfg.SMTP)
 	trackingHost := cfg.Server.Public.URL
 	maxAttempts := cfg.SMTP.Send.Attempts
-	srv.deliveryService = service.NewDeliveryService(srv.db, q, mailerImpl, trackingHost, maxAttempts)
+	srv.deliveryService = service.NewDeliveryService(srv.db, q, srv.mailer, trackingHost, maxAttempts)
 
 	templateService := template.NewService()
 	srv.listService = service.NewListService(srv.db)
@@ -114,7 +138,7 @@ func (s *Server) registerMiddlewares() {
 }
 
 func (s *Server) registerAdminRoutes() {
-	s.adminRouter.Get("/swagger/*", httpSwagger.WrapHandler)
+	s.adminRouter.Get("/swagger/*", http_swagger.WrapHandler)
 
 	listHandler := admin.NewListHandler(s.listService)
 	campaignHandler := admin.NewCampaignHandler(s.campaignService)
@@ -170,14 +194,25 @@ func (s *Server) Serve() {
 	hostname, _ := os.Hostname()
 	go worker.Start(context.Background(), hostname+":"+uuid.NewString())
 
-	// start IMAP receiver for bounce processing if configured
-	imapReceiver := receiver.NewIMAPReceiver(s.cfg.SMTP, s.db)
-	if imapReceiver != nil {
-		go func() {
-			if err := imapReceiver.Start(context.Background()); err != nil {
-				log.Printf("imap receiver failed to start: %v", err)
-			}
-		}()
+	if s.receiver != nil {
+		ctx := context.Background()
+		events, err := s.receiver.Start(ctx)
+		if err != nil {
+			log.Printf("imap receiver failed to start: %v", err)
+		} else {
+			go func() {
+				for {
+					event, ok := <-events
+					if !ok {
+						break
+					}
+					log.Printf("MAIL RECEIVED: %+v", event)
+					if err := s.deliveryService.HandleBouncedMail(ctx, event); err != nil {
+						log.Printf("HandleBouncedMail failed: %+v", err)
+					}
+				}
+			}()
+		}
 	}
 
 	go func() {

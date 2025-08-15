@@ -16,6 +16,7 @@ import (
 type Config struct {
 	Server   ServerConfig   `koanf:"server"`
 	SMTP     SMTPConfig     `koanf:"smtp"`
+	IMAP     IMAPConfig     `koanf:"imap"`
 	Tracking TrackingConfig `koanf:"tracking"`
 	Database DatabaseConfig `koanf:"database"`
 }
@@ -47,17 +48,15 @@ type SMTPConfig struct {
 		Throttle  int `koanf:"throttle"`
 		Attempts  int `koanf:"attempts"`
 	} `koanf:"send"`
+}
 
-	// Receive settings for mailboxes used to check bounces/feedback
-	Receive struct {
-		Host     string `koanf:"host"`
-		Port     int    `koanf:"port"`
-		Username string `koanf:"username"`
-		Password string `koanf:"password"`
-		Protocol string `koanf:"protocol"` // e.g. "imap", "pop3"
-		TLS      bool   `koanf:"tls"`
-		Mailbox  string `koanf:"mailbox"` // e.g. "INBOX"
-	} `koanf:"receive"`
+type IMAPConfig struct {
+	Host     string `koanf:"host"`
+	Port     int    `koanf:"port"`
+	Username string `koanf:"username"`
+	Password string `koanf:"password"`
+	TLS      bool   `koanf:"tls"`
+	Mailbox  string `koanf:"mailbox"` // e.g. "INBOX"
 }
 
 // TrackingConfig holds tracking-related configuration.

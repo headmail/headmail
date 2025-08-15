@@ -2,6 +2,7 @@ package public
 
 import (
 	"encoding/base64"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -47,6 +48,11 @@ func openHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 			UserAgent:  &ua,
 			IPAddress:  &ip,
 			CreatedAt:  now,
+		}
+
+		// Atomically increment open count (repository will set OpenedAt on first open)
+		if err := db.DeliveryRepository().IncrementCount(ctx, deliveryID, domain.EventTypeOpened); err != nil {
+			log.Printf("tracking: failed to increment open count for %s: %v", deliveryID, err)
 		}
 
 		// store event synchronously
@@ -116,6 +122,11 @@ func clickHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 			IPAddress:  &ip,
 			URL:        &decoded,
 			CreatedAt:  now,
+		}
+
+		// Atomically increment click count
+		if err := db.DeliveryRepository().IncrementCount(ctx, deliveryID, domain.EventTypeClicked); err != nil {
+			log.Printf("tracking: failed to increment click count for %s: %v", deliveryID, err)
 		}
 
 		// record click synchronously

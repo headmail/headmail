@@ -13,6 +13,7 @@ import (
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/mailer"
 	"github.com/headmail/headmail/pkg/queue"
+	"github.com/headmail/headmail/pkg/receiver"
 	"github.com/headmail/headmail/pkg/repository"
 )
 
@@ -30,12 +31,15 @@ type DeliveryServiceProvider interface {
 	UpdateDeliveryStatus(ctx context.Context, id string, status string) error
 
 	HandleDeliveryQueuedItem(ctx context.Context, workerID string, item *queue.QueueItem) error
+
+	HandleBouncedMail(ctx context.Context, event *receiver.Event) error
 }
 
 // DeliveryService provides business logic for delivery management.
 type DeliveryService struct {
 	db           repository.DB
 	repo         repository.DeliveryRepository
+	eventRepo    repository.EventRepository
 	queue        queue.Queue
 	mailer       mailer.Mailer
 	trackingHost string
@@ -47,6 +51,7 @@ func NewDeliveryService(db repository.DB, q queue.Queue, m mailer.Mailer, tracki
 	return &DeliveryService{
 		db:           db,
 		repo:         db.DeliveryRepository(),
+		eventRepo:    db.EventRepository(),
 		queue:        q,
 		mailer:       m,
 		trackingHost: trackingHost,
@@ -163,6 +168,34 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 
 	if err := s.repo.Update(ctx, d); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (s *DeliveryService) HandleBouncedMail(ctx context.Context, data *receiver.Event) error {
+	now := time.Now()
+	ev := &domain.DeliveryEvent{
+		DeliveryID: data.DeliveryID,
+		CreatedAt:  now.Unix(),
+		EventType:  domain.EventTypeBounced,
+		EventData: map[string]interface{}{
+			"recipients": data.BouncedRecipients,
+			"subject":    data.Subject,
+			"message_id": data.MessageID,
+			"reason":     data.Reason,
+		},
+	}
+
+	// Atomically increment bounce count (repository will handle race conditions)
+	if err := s.repo.IncrementCount(ctx, data.DeliveryID, domain.EventTypeBounced); err != nil {
+		log.Printf("imap receiver: failed to increment bounce count: %v", err)
+		// continue to record event even if increment failed
+	}
+
+	// write synchronously
+	if err := s.eventRepo.Create(ctx, ev); err != nil {
+		log.Printf("imap receiver: failed to save event: %v", err)
 	}
 
 	return nil

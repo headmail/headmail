@@ -81,7 +81,15 @@ type DeliveryRepository interface {
 	// The result is limited by `limit`.
 	ListScheduledBefore(ctx context.Context, ts int64, limit int) ([]*domain.Delivery, error)
 	GetByCampaignID(ctx context.Context, campaignID string, pagination Pagination) ([]*domain.Delivery, int, error)
+
 	UpdateStatus(ctx context.Context, id string, status string) error
+
+	// IncrementCount atomically increments a single counter (open, click, bounce) for a delivery.
+	// eventType should be one of domain.EventTypeOpened, domain.EventTypeClicked, domain.EventTypeBounced.
+	// Implementations must perform the increment atomically. For open events, if the OpenedAt
+	// timestamp is currently NULL, implementations should set OpenedAt to the current unix
+	// seconds value when incrementing (i.e. first open should also set OpenedAt).
+	IncrementCount(ctx context.Context, id string, eventType domain.EventType) error
 }
 
 // TemplateRepository defines the interface for template storage.

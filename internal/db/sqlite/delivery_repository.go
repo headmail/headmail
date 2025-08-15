@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
@@ -220,6 +221,33 @@ func (r *deliveryRepository) ListScheduledBefore(ctx context.Context, ts int64, 
 	}
 
 	return deliveries, nil
+}
+
+func (r *deliveryRepository) IncrementCount(ctx context.Context, id string, eventType domain.EventType) error {
+	db := extractTx(ctx, r.db.DB)
+
+	switch eventType {
+	case domain.EventTypeOpened:
+		// Atomically increment open_count and set opened_at if null (first open).
+		now := time.Now().Unix()
+		// Use COALESCE to set opened_at only if it's currently NULL.
+		if err := db.WithContext(ctx).Exec("UPDATE deliveries SET open_count = open_count + 1, opened_at = IFNULL(opened_at, ?) WHERE id = ?", now, id).Error; err != nil {
+			return err
+		}
+	case domain.EventTypeClicked:
+		if err := db.WithContext(ctx).Exec("UPDATE deliveries SET click_count = click_count + 1 WHERE id = ?", id).Error; err != nil {
+			return err
+		}
+	case domain.EventTypeBounced:
+		if err := db.WithContext(ctx).Exec("UPDATE deliveries SET bounce_count = bounce_count + 1 WHERE id = ?", id).Error; err != nil {
+			return err
+		}
+	default:
+		// unknown event type: no-op
+		return nil
+	}
+
+	return nil
 }
 
 func (r *deliveryRepository) UpdateStatus(ctx context.Context, id string, status string) error {

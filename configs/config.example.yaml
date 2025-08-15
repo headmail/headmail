@@ -21,6 +21,12 @@ smtp:
     throttle: 50    # Maximum emails per second
     attempts: 5
 
+imap:
+  host: "mail.example.com"
+  port: 143
+  username: "no-reply@example.com"
+  password: "password"
+
 database:
   type: "sqlite" # sqlite, mysql, postgresql, mongodb
   url : "file:data.db?cache=shared&mode=rwc"

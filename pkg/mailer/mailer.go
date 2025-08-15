@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"context"
+	"strings"
 
 	"github.com/headmail/headmail/pkg/domain"
 )
@@ -12,3 +13,7 @@ type Mailer interface {
 	// constructing message headers/body and performing the send.
 	Send(ctx context.Context, d *domain.Delivery) error
 }
+
+const HeadmailDeliveryHeaderName = "X-Headmail-Delivery"
+
+var HeadmailDeliveryHeaderNameAsLower = strings.ToLower(HeadmailDeliveryHeaderName)

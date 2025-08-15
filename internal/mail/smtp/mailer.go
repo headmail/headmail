@@ -1,4 +1,4 @@
-package mailer
+package smtp
 
 import (
 	"context"
@@ -8,20 +8,21 @@ import (
 
 	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/domain"
+	"github.com/headmail/headmail/pkg/mailer"
 )
 
-// SMTPMailer sends mail using an SMTP server.
-type SMTPMailer struct {
+// Mailer sends mail using an SMTP server.
+type Mailer struct {
 	cfg config.SMTPConfig
 }
 
-// NewSMTPMailer constructs an SMTPMailer with provided config.
-func NewSMTPMailer(cfg config.SMTPConfig) *SMTPMailer {
-	return &SMTPMailer{cfg: cfg}
+// NewMailer constructs an Mailer with provided config.
+func NewMailer(cfg config.SMTPConfig) *Mailer {
+	return &Mailer{cfg: cfg}
 }
 
 // Send implements Mailer.Send using net/smtp.
-func (m *SMTPMailer) Send(ctx context.Context, d *domain.Delivery) error {
+func (m *Mailer) Send(ctx context.Context, d *domain.Delivery) error {
 	// Build email message
 	fromHeader := fmt.Sprintf("%s <%s>", m.cfg.From.Name, m.cfg.From.Email)
 	toHeader := d.Email
@@ -30,9 +31,27 @@ func (m *SMTPMailer) Send(ctx context.Context, d *domain.Delivery) error {
 	var body string
 	var contentType string
 	if d.BodyText != "" && d.BodyHTML != "" {
-		// prefer HTML
-		contentType = "text/html; charset=\"utf-8\""
-		body = d.BodyHTML
+		// send both text and html using multipart/alternative
+		boundary := fmt.Sprintf("BOUNDARY_%s", d.ID)
+		contentType = "multipart/alternative; boundary=" + boundary
+
+		var b strings.Builder
+		// first: plain text part
+		b.WriteString("--" + boundary + "\r\n")
+		b.WriteString("Content-Type: text/plain; charset=\"utf-8\"\r\n")
+		b.WriteString("\r\n")
+		b.WriteString(d.BodyText)
+		b.WriteString("\r\n")
+		// second: html part
+		b.WriteString("--" + boundary + "\r\n")
+		b.WriteString("Content-Type: text/html; charset=\"utf-8\"\r\n")
+		b.WriteString("\r\n")
+		b.WriteString(d.BodyHTML)
+		b.WriteString("\r\n")
+		// end boundary
+		b.WriteString("--" + boundary + "--\r\n")
+
+		body = b.String()
 	} else if d.BodyHTML != "" {
 		contentType = "text/html; charset=\"utf-8\""
 		body = d.BodyHTML
@@ -41,10 +60,11 @@ func (m *SMTPMailer) Send(ctx context.Context, d *domain.Delivery) error {
 		body = d.BodyText
 	}
 
-	headers := make([]string, 0, 6)
+	headers := make([]string, 0, 8)
 	headers = append(headers, "From: "+fromHeader)
 	headers = append(headers, "To: "+toHeader)
 	headers = append(headers, "Subject: "+subject)
+	headers = append(headers, mailer.HeadmailDeliveryHeaderName+": "+d.ID)
 	headers = append(headers, "MIME-Version: 1.0")
 	headers = append(headers, "Content-Type: "+contentType)
 
