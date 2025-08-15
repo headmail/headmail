@@ -22,13 +22,21 @@ var transparentPNG, _ = base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgA
 
 // RegisterRoutes registers tracking routes on the provided router.
 func RegisterRoutes(r chi.Router, db repository.DB, cfg *config.Config) {
-	r.Get("/r/{delivery_id}/o", openHandler(db, cfg))
-	r.Get("/r/{delivery_id}/c", clickHandler(db, cfg))
+	r.Get("/r/{deliveryID}/o", openHandler(db, cfg))
+	r.Get("/r/{deliveryID}/c", clickHandler(db, cfg))
 }
 
+// @Summary Track open (1x1 pixel)
+// @Description Records an open event for a delivery and returns a 1x1 transparent PNG (or configured image).
+// @Tags tracking
+// @Param deliveryID path string true "Delivery ID"
+// @Produce image/png
+// @Success 200 {file} binary image
+// @Failure 400 {object} map[string]string
+// @Router /r/{deliveryID}/o [get]
 func openHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deliveryID := chi.URLParam(r, "delivery_id")
+		deliveryID := chi.URLParam(r, "deliveryID")
 		if deliveryID == "" {
 			http.Error(w, "missing delivery id", http.StatusBadRequest)
 			return
@@ -41,7 +49,6 @@ func openHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 		ip := extractRemoteIP(r)
 
 		ev := &domain.DeliveryEvent{
-			ID:         "", // repo may set ID, but domain expects it; repository implementation can fill or DB auto-generate
 			DeliveryID: deliveryID,
 			EventType:  domain.EventTypeOpened,
 			EventData:  map[string]interface{}{},
@@ -85,9 +92,17 @@ func openHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 	}
 }
 
+// @Summary Track click and redirect
+// @Description Records a click event and redirects to the original URL.
+// @Tags tracking
+// @Param deliveryID path string true "Delivery ID"
+// @Param u query string true "URL encoded target"
+// @Success 302 "Redirect"
+// @Failure 400 {object} map[string]string
+// @Router /r/{deliveryID}/c [get]
 func clickHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deliveryID := chi.URLParam(r, "delivery_id")
+		deliveryID := chi.URLParam(r, "deliveryID")
 		if deliveryID == "" {
 			http.Error(w, "missing delivery id", http.StatusBadRequest)
 			return
@@ -114,7 +129,6 @@ func clickHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 		ip := extractRemoteIP(r)
 
 		ev := &domain.DeliveryEvent{
-			ID:         "",
 			DeliveryID: deliveryID,
 			EventType:  domain.EventTypeClicked,
 			EventData:  map[string]interface{}{"url": decoded},

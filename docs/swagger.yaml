@@ -1082,6 +1082,69 @@ paths:
       summary: Replace subscribers in a list
       tags:
       - lists
+  /r/{deliveryID}/c:
+    get:
+      description: Records a click event and redirects to the original URL.
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        schema:
+          type: string
+      - description: URL encoded target
+        in: query
+        name: u
+        required: true
+        schema:
+          type: string
+      responses:
+        "302":
+          description: Redirect
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad Request
+      summary: Track click and redirect
+      tags:
+      - tracking
+  /r/{deliveryID}/o:
+    get:
+      description: Records an open event for a delivery and returns a 1x1 transparent
+        PNG (or configured image).
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: file
+            image/png:
+              schema:
+                format: binary
+                type: string
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad Request
+      summary: Track open (1x1 pixel)
+      tags:
+      - tracking
   /subscribers:
     get:
       description: List subscribers
