@@ -6,10 +6,12 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/api/admin/dto"
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service"
+	tmpl "github.com/headmail/headmail/pkg/template"
 )
 
 // TemplateHandler handles HTTP requests for templates.
@@ -25,6 +27,9 @@ func NewTemplateHandler(service service.TemplateServiceProvider) *TemplateHandle
 // RegisterRoutes registers the template routes to the router.
 func (h *TemplateHandler) RegisterRoutes(r chi.Router) {
 	r.Route("/templates", func(r chi.Router) {
+		// server-side preview endpoint used by the editor to render templates with sample data
+		r.Post("/preview", h.previewTemplate)
+
 		r.Post("/", h.createTemplate)
 		r.Get("/", h.listTemplates)
 		r.Route("/{templateID}", func(r chi.Router) {
@@ -63,6 +68,59 @@ func (h *TemplateHandler) createTemplate(w http.ResponseWriter, r *http.Request)
 	}
 
 	writeJson(w, http.StatusCreated, template)
+}
+
+// @Summary Render template preview
+// @Description Renders provided template HTML/text/subject with sample data (name, email) and returns rendered output.
+// @Tags templates
+// @Accept  json
+// @Produce  json
+// @Param   preview  body  dto.PreviewTemplateRequest  true  "Preview request"
+// @Success 200 {object} dto.PreviewTemplateResponse
+// @Router /templates/preview [post]
+func (h *TemplateHandler) previewTemplate(w http.ResponseWriter, r *http.Request) {
+	var req dto.PreviewTemplateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Use package template service for rendering
+	svc := tmpl.NewService()
+
+	// Sample data (matching createDeliveryFromCampaign defaults)
+	data := map[string]interface{}{
+		"name":       req.Name,
+		"email":      req.Email,
+		"deliveryId": uuid.New().String(),
+	}
+
+	renderedHTML, err := svc.Render(req.TemplateHTML, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var renderedText string
+	if req.TemplateText != "" {
+		if t, err := svc.Render(req.TemplateText, data); err == nil {
+			renderedText = t
+		}
+	}
+
+	var renderedSubject string
+	if req.Subject != "" {
+		if s, err := svc.Render(req.Subject, data); err == nil {
+			renderedSubject = s
+		}
+	}
+
+	resp := &dto.PreviewTemplateResponse{
+		HTML:    renderedHTML,
+		Text:    renderedText,
+		Subject: renderedSubject,
+	}
+	writeJson(w, http.StatusOK, resp)
 }
 
 // @Summary Get a template by ID

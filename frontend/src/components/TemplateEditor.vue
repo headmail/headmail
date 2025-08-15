@@ -1,101 +1,162 @@
 <template>
   <div class="space-y-3">
+
+    <!-- Subject input placed below (full-width under template name in parent view) -->
+    <div class="mb-2">
+      <input v-model="subjectInput" type="text" placeholder="Subject (optional)"
+             class="w-full px-3 py-2 border rounded text-sm"/>
+    </div>
+
     <div class="flex items-center gap-2 mb-2">
-      <button
-        type="button"
-        :class="['px-3 py-1 rounded-md text-sm', activeTab === 'editor' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
-        @click="activeTab = 'editor'">
-        GrapesJS
-      </button>
-      <button
-        type="button"
-        :class="['px-3 py-1 rounded-md text-sm', activeTab === 'html' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
-        @click="activeTab = 'html'">
-        HTML
-      </button>
-      <button
-        type="button"
-        :class="['px-3 py-1 rounded-md text-sm', activeTab === 'preview' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
-        @click="activeTab = 'preview'">
-        미리보기
-      </button>
-      <div class="ml-auto flex items-center space-x-3">
-        <div class="relative">
-          <button type="button" @click="showSamples = !showSamples" class="px-3 py-1 rounded-md bg-gray-100 text-sm">
-            Samples
-          </button>
-          <div v-if="showSamples" class="absolute right-0 mt-2 w-56 bg-white border rounded shadow z-10">
-            <ul>
-              <li
-                v-for="s in samples"
-                :key="s.id"
-                class="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-                @click="loadSample(s)"
-              >
-                {{ s.name }}
-              </li>
-            </ul>
+      <div class="flex items-center gap-2">
+        <button
+            type="button"
+            :class="['px-3 py-1 rounded-md text-sm', activeTab === 'editor' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
+            @click="activeTab = 'editor'">
+          GrapesJS
+        </button>
+        <button
+            type="button"
+            :class="['px-3 py-1 rounded-md text-sm', activeTab === 'mjml' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
+            @click="activeTab = 'mjml'">
+          MJML
+        </button>
+        <button
+            type="button"
+            :class="['px-3 py-1 rounded-md text-sm', activeTab === 'preview' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
+            @click="activeTab = 'preview'">
+          미리보기
+        </button>
+        <div class="ml-auto flex items-center gap-3">
+          <div class="relative">
+            <button type="button" @click="showSamples = !showSamples" class="px-2 py-1 rounded-md bg-gray-100 text-sm">
+              Samples
+            </button>
+            <div v-if="showSamples" class="absolute right-0 mt-2 w-48 bg-white border rounded shadow z-10">
+              <ul>
+                <li
+                    v-for="s in samples"
+                    :key="s.id"
+                    class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    @click="loadSample(s)"
+                >
+                  {{ s.name }}
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
-        <div class="text-xs text-gray-500">Tip: 드래그해서 레이아웃을 만드세요</div>
       </div>
     </div>
 
-    <div v-show="activeTab === 'editor'" class="border border-gray-200 rounded-lg overflow-hidden p-0" style="min-height:240px;">
+    <!-- Sample fields and preview button in a compact single row -->
+    <div class="flex items-center gap-2 mb-2">
+      <input v-model="sampleName" type="text" placeholder="Sample name" class="px-2 py-1 border rounded text-sm w-44"/>
+      <input v-model="sampleEmail" type="text" placeholder="Sample email"
+             class="px-2 py-1 border rounded text-sm w-64"/>
+      <button
+          type="button"
+          @click="doServerPreview"
+          :disabled="previewLoading"
+          class="px-3 py-1 rounded-md text-sm bg-blue-600 text-white"
+      >
+        {{ previewLoading ? 'Rendering…' : 'Server Preview' }}
+      </button>
+      <div class="text-xs text-gray-500 ml-2 hidden sm:block">Tip: 드래그해서 레이아웃을 만드세요</div>
+    </div>
+
+    <div v-show="activeTab === 'editor'" class="border border-gray-200 rounded-lg overflow-hidden p-0"
+         style="min-height:240px;">
       <div ref="editorContainer" :style="containerStyle"></div>
     </div>
 
-    <div v-show="activeTab === 'html'">
+    <div v-show="activeTab === 'mjml'">
       <textarea
-        v-model="localHtml"
-        rows="12"
-        class="w-full px-4 py-3 border border-gray-300 rounded-xl font-mono text-sm"
-        placeholder="HTML 형식의 이메일 본문을 입력하세요..."></textarea>
+          v-model="localMjml"
+          rows="12"
+          class="w-full px-4 py-3 border border-gray-300 rounded-xl font-mono text-sm"
+          placeholder="MJML 형식의 이메일 본문을 입력하세요..."></textarea>
     </div>
 
     <div v-show="activeTab === 'preview'">
-      <div class="w-full border border-gray-200 rounded-lg p-4 bg-white" v-html="localHtml"></div>
+      <div class="w-full border border-gray-200 rounded-lg p-4 bg-white">
+        <div v-if="serverPreviewSubject" class="mb-2 text-sm font-semibold">{{ serverPreviewSubject }}</div>
+        <div v-if="previewError" class="text-sm text-red-600 mb-2">{{ previewError }}</div>
+        <div v-if="!serverPreviewHtml && previewLoading" class="text-sm text-gray-600">Rendering preview...</div>
+
+        <div v-if="serverPreviewHtml" v-html="serverPreviewHtml" class="min-h-[120px]"></div>
+        <div v-else class="min-h-[120px]" v-html="localPreviewHtml"></div>
+
+        <div v-if="serverPreviewText" class="mt-4 p-2 bg-gray-50 rounded text-sm font-mono whitespace-pre-wrap">
+          {{ serverPreviewText }}
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-2 mb-2">
+      <!-- right side: compact controls removed from this row to keep single-row tabs -->
+      <div class="text-xs text-gray-400 hidden sm:block">
+        <div class="font-semibold text-sm mb-1">Available template variables</div>
+        <ul class="list-inside list-disc">
+          <li><span class="font-mono local-pre">{{formatVarName('.name')}}</span> — user name (string)</li>
+          <li><span class="font-mono local-pre">{{formatVarName('.deliveryId')}}</span> — user email (string)</li>
+          <li><span class="font-mono local-pre">{{formatVarName('.deliveryId')}}</span> — delivery identifier generated per-send (string)</li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick, computed } from 'vue';
+/* Minimal comments in English only per Dev Guide.
+   Adds server preview UI and calls previewTemplate API (typed via generated types).
+*/
+
+import {ref, onMounted, onBeforeUnmount, watch, nextTick, computed} from 'vue';
 import grapesjs from 'grapesjs';
 import presetNewsletter from 'grapesjs-preset-newsletter';
 import gjsMjml from 'grapesjs-mjml';
 import 'grapesjs/dist/css/grapes.min.css';
 import mjml2html from 'mjml-browser';
+import {previewTemplate} from '../api';
 
 const props = defineProps<{
-  modelValueHtml?: string;
-  modelValueGrapes?: string | Record<string, any>;
   modelValueMjml?: string;
+  modelValueHtml?: string;
   fullscreen?: boolean;
 }>();
 
- // compute container style so editor has an explicit height when modal is not fullscreen
- const containerStyle = computed(() => {
-   return {
-     // use a fixed min-height when not fullscreen so GrapesJS canvas can calculate properly
-     height: props.fullscreen ? '100%' : '420px',
-     width: '100%',
-     minWidth: '0',
-   } as Record<string, string>;
- });
+const formatVarName = (name: string) => {
+  return `{{ ${name} }}`;
+}
+
+// compute container style so editor has an explicit height when modal is not fullscreen
+const containerStyle = computed(() => {
+  return {
+    // use a fixed min-height when not fullscreen so GrapesJS canvas can calculate properly
+    height: props.fullscreen ? '100%' : '420px',
+    width: '100%',
+    minWidth: '0',
+  } as Record<string, string>;
+});
 
 const emits = defineEmits(['update:html', 'update:grapes', 'update:mjml']);
 
 const editorContainer = ref<HTMLElement | null>(null);
 let editor: any = null;
 
-const activeTab = ref<'editor' | 'html' | 'preview'>('editor');
-const localHtml = ref(props.modelValueHtml || '');
-const initialGrapes = props.modelValueGrapes || null;
+const activeTab = ref<'editor' | 'mjml' | 'preview'>('editor');
+const localMjml = ref(props.modelValueMjml || '');
+const localPreviewHtml = computed(() => {
+  if (!localMjml.value) {
+    return '';
+  }
+  const res = mjml2html(localMjml.value, { keepComments: false });
+  return (res && (res as any).html) || '';
+})
 
- // Samples dropdown state and sample definitions (simple HTML snippets).
- const showSamples = ref(false);
- const samples: Array<{ id: string; name: string; html?: string; mjml?: string }> = [
+// Samples dropdown state and sample definitions (simple HTML snippets).
+const showSamples = ref(false);
+const samples: Array<{ id: string; name: string; html?: string; mjml?: string }> = [
   {
     id: 'newsletter',
     name: 'MJML - Newsletter (Hero + CTA)',
@@ -179,7 +240,7 @@ const initialGrapes = props.modelValueGrapes || null;
       <mj-column>
         <mj-text align="center" padding="10px 25px" font-size="20px" color="#512d0b"><strong>Hey {{FirstName}}!</strong></mj-text>
         <mj-text align="center" font-size="18px" font-family="Arial">Are you enjoying our weekly newsletter?<br /> Then why not share it with your friends?</mj-text>
-        <mj-text align="center" color="#489BDA" font-size="25px" font-family="Arial, sans-serif" font-weight="bold" line-height="35px" padding-top="20px">You&apos;ll get a 15% discount <br />
+        <mj-text align="center" color="#489BDA" font-size="25px" font-family="Arial, sans-serif" font-weight="bold" line-height="35px" padding-top="20px">You'll get a 15% discount <br />
           <span style="font-size:18px">on your next order when a friend uses the code {{ReferalCode}}!</span>
         </mj-text>
         <mj-button background-color="#8bb420" color="#FFFFFF" href="https://mjml.io" font-family="Arial, sans-serif" padding="20px 0 0 0" font-weight="bold" font-size="16px">Refer a friend now</mj-button>
@@ -226,50 +287,62 @@ const initialGrapes = props.modelValueGrapes || null;
   }
 ];
 
+const loadMjmlToEditor = () => {
+  try {
+    console.log('loadMjmlToEditor: ', localMjml.value)
+    // const result = mjml2html(localMjml.value, {keepComments: false});
+    // const compiledHtml = result && result.html ? result.html : '';
+    editor.setComponents(localMjml.value);
+  } catch (e) {
+    console.error('Failed to compile MJML sample:', e);
+  }
+}
+
 const loadSample = (s: { id: string; name: string; html?: string; mjml?: string }) => {
   showSamples.value = false;
   if (!editor) return;
+  if (s.mjml) {
+    localMjml.value = s.mjml;
+    loadMjmlToEditor();
+  }
+};
+
+// Server preview state
+const sampleName = ref('John Doe');
+const sampleEmail = ref('john@example.com');
+const subjectInput = ref('');
+const serverPreviewHtml = ref('');
+const serverPreviewText = ref('');
+const serverPreviewSubject = ref('');
+const previewLoading = ref(false);
+const previewError = ref('');
+
+/**
+ * Request server-side rendering of the current template HTML + subject using sample data.
+ * Uses previewTemplate from frontend API (typed against generated types).
+ */
+const doServerPreview = async () => {
+  previewLoading.value = true;
+  previewError.value = '';
   try {
-    if (s.html) {
-      editor.setComponents(s.html);
-      // small style to make buttons look nicer
-      try {
-        editor.setStyle('body { font-family: Arial, sans-serif; } a { text-decoration:none; }');
-      } catch {}
-      // emit immediately
-      const html = editor.getHtml();
-      localHtml.value = html;
-      emits('update:html', html);
-      emits('update:grapes', JSON.stringify({
-        html: editor.getHtml(),
-        css: editor.getCss ? editor.getCss() : '',
-        components: editor.getComponents ? editor.getComponents() : '',
-        style: editor.getStyle ? editor.getStyle() : ''
-      }));
-    }
-    if (s.mjml) {
-      // compile MJML to HTML then load into editor
-      try {
-        const result = mjml2html(s.mjml, { keepComments: false });
-        const compiledHtml = result && result.html ? result.html : '';
-        editor.setComponents(compiledHtml);
-        // set MJML value to parent via emit so it's stored
-        emits('update:mjml', s.mjml);
-        // emit compiled HTML and grapes project snapshot
-        localHtml.value = compiledHtml;
-        emits('update:html', compiledHtml);
-        emits('update:grapes', JSON.stringify({
-          html: editor.getHtml(),
-          css: editor.getCss ? editor.getCss() : '',
-          components: editor.getComponents ? editor.getComponents() : '',
-          style: editor.getStyle ? editor.getStyle() : ''
-        }));
-      } catch (e) {
-        console.error('Failed to compile MJML sample:', e);
-      }
-    }
-  } catch (e) {
-    console.error('Failed to load sample:', e);
+    const req = {
+      templateHtml: localPreviewHtml.value,
+      templateText: '',
+      subject: subjectInput.value,
+      name: sampleName.value,
+      email: sampleEmail.value,
+    };
+    const res = await previewTemplate(req as any);
+    // response typed in generated types; guard access as defensive code
+    serverPreviewHtml.value = (res && (res as any).html) || '';
+    serverPreviewText.value = (res && (res as any).text) || '';
+    serverPreviewSubject.value = (res && (res as any).subject) || '';
+    activeTab.value = 'preview';
+  } catch (e: any) {
+    console.error('Preview failed', e);
+    previewError.value = e?.message || String(e);
+  } finally {
+    previewLoading.value = false;
   }
 };
 
@@ -294,86 +367,15 @@ onMounted(async () => {
 
   // Load initial content: prefer grapes project if provided, otherwise load HTML.
   // If nothing provided, load a small default sample so users can start quickly.
-  try {
-    if (initialGrapes) {
-      let data: any = initialGrapes;
-      if (typeof initialGrapes === 'string' && initialGrapes.trim() !== '') {
-        data = JSON.parse(initialGrapes);
-      }
-      if (data) {
-        if (data.components) {
-          editor.setComponents(data.components);
-        } else if (data.html) {
-          editor.setComponents(data.html);
-        } else if (typeof data === 'string') {
-          editor.setComponents(data);
-        }
-        if (data.style) {
-          editor.setStyle(data.style);
-        }
-        if (data.css) {
-          editor.setCss ? editor.setCss(data.css) : null;
-        }
-      }
-    } else if (props.modelValueHtml) {
-      editor.setComponents(props.modelValueHtml);
-    } else {
-      // No initial content provided — load a helpful sample template
-      const sampleHtml = `
-        <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-          <tr>
-            <td align="center" style="padding:32px 16px;background:#f8fafc;">
-              <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;">
-                <tr>
-                  <td style="padding:24px 32px;background:#ffffff;border-radius:8px;text-align:left;font-family:Arial, sans-serif;">
-                    <h1 style="margin:0 0 12px;font-size:24px;color:#111827;">Welcome to Headmail</h1>
-                    <p style="margin:0 0 18px;color:#374151;">This is a sample newsletter template. Use the GrapesJS blocks to customize layout, images and buttons.</p>
-                    <p style="margin:0;"><a href=\"#\" class=\"btn\" style=\"display:inline-block;padding:10px 18px;background:#3b82f6;color:#ffffff;border-radius:6px;text-decoration:none;\">Get Started</a></p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:12px 32px;text-align:center;font-size:12px;color:#9ca3af;">You are receiving this email because you signed up for updates.</td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-      `.trim();
-
-      // Set sample HTML and a minimal style so it looks decent in preview/editor.
-      editor.setComponents(sampleHtml);
-      try {
-        editor.setStyle('body { font-family: Arial, sans-serif; } .btn { display:inline-block; padding:10px 18px; background:#3b82f6; color:#fff; border-radius:6px; text-decoration:none;}');
-      } catch {}
-    }
-  } catch (e) {
-    // fallback: load html
-    if (props.modelValueHtml) {
-      editor.setComponents(props.modelValueHtml);
-    }
-    console.error('Failed to load grapes project:', e);
+  if (props.modelValueMjml) {
+    localMjml.value = props.modelValueMjml;
+    loadMjmlToEditor();
   }
 
   // Update localHtml from editor and emit grapes project JSON
   const updateAll = () => {
     try {
-      const html = editor.getHtml();
-      localHtml.value = html;
-      emits('update:html', html);
-
-      // build grapes project JSON
-      let grapesData: any = {};
-      if (editor.getProjectData) {
-        grapesData = editor.getProjectData();
-      } else {
-        grapesData = {
-          html: editor.getHtml(),
-          css: editor.getCss ? editor.getCss() : '',
-          components: editor.getComponents ? editor.getComponents() : '',
-          style: editor.getStyle ? editor.getStyle() : '',
-        };
-      }
-      emits('update:grapes', JSON.stringify(grapesData));
+      localMjml.value = editor.runCommand('mjml-code')
     } catch (err) {
       console.error('Error updating editor content:', err);
     }
@@ -389,57 +391,61 @@ onMounted(async () => {
   updateAll();
 });
 
-
 // When fullscreen prop changes, re-render / refresh editor so canvas resizes correctly.
 watch(
-  () => props.fullscreen,
-  async () => {
-    if (!editor) return;
-    await nextTick();
-    try {
-      editor.render && editor.render();
-      // ensure iframe frame element uses full width
-      if (editor.Canvas && editor.Canvas.getFrameEl) {
-        const frame = editor.Canvas.getFrameEl();
-        if (frame && (frame as HTMLElement).style) {
-          (frame as HTMLElement).style.width = '100%';
-          (frame as HTMLElement).style.minWidth = '0';
+    () => props.fullscreen,
+    async () => {
+      if (!editor) return;
+      await nextTick();
+      try {
+        editor.render && editor.render();
+        // ensure iframe frame element uses full width
+        if (editor.Canvas && editor.Canvas.getFrameEl) {
+          const frame = editor.Canvas.getFrameEl();
+          if (frame && (frame as HTMLElement).style) {
+            (frame as HTMLElement).style.width = '100%';
+            (frame as HTMLElement).style.minWidth = '0';
+          }
         }
+        // dispatch resize to help internal layouts recalc
+        window.dispatchEvent(new Event('resize'));
+      } catch (e) {
+        // ignore
       }
-      // dispatch resize to help internal layouts recalc
-      window.dispatchEvent(new Event('resize'));
-    } catch (e) {
-      // ignore
     }
-  }
 );
 
-// When switching to the editor tab, ensure GrapesJS refreshes to fit container.
+ // When switching to the editor tab, ensure GrapesJS refreshes to fit container and restore MJML-compiled HTML.
 watch(
-  () => activeTab.value,
-  async (val) => {
-    if (val !== 'editor' || !editor) return;
-    await nextTick();
-    try {
-      editor.render && editor.render();
-      if (editor.Canvas && editor.Canvas.getFrameEl) {
-        const frame = editor.Canvas.getFrameEl();
-        if (frame && (frame as HTMLElement).style) {
-          (frame as HTMLElement).style.width = '100%';
-          (frame as HTMLElement).style.minWidth = '0';
+    () => activeTab.value,
+    async (val) => {
+      if (!editor) return;
+      await nextTick();
+      try {
+        // If returning to editor and we have MJML source, compile it and restore into the editor.
+        if (val === 'editor') {
+          loadMjmlToEditor()
         }
+
+        editor.render && editor.render();
+        if (editor.Canvas && editor.Canvas.getFrameEl) {
+          const frame = editor.Canvas.getFrameEl();
+          if (frame && (frame as HTMLElement).style) {
+            (frame as HTMLElement).style.width = '100%';
+            (frame as HTMLElement).style.minWidth = '0';
+          }
+        }
+        window.dispatchEvent(new Event('resize'));
+        // small delay refresh for tricky layouts
+        setTimeout(() => {
+          try {
+            editor.render && editor.render();
+          } catch {}
+        }, 50);
+      } catch (e) {
+        // ignore
       }
-      window.dispatchEvent(new Event('resize'));
-      // small delay refresh for tricky layouts
-      setTimeout(() => {
-        try {
-          editor.render && editor.render();
-        } catch {}
-      }, 50);
-    } catch (e) {
-      // ignore
     }
-  }
 );
 
 onBeforeUnmount(() => {
@@ -453,38 +459,26 @@ onBeforeUnmount(() => {
   }
 });
 
-// Watch the external html prop and update local editor if needed
-watch(
-  () => props.modelValueHtml,
-  (v) => {
-    if (v !== undefined && v !== localHtml.value && editor) {
-      localHtml.value = v as string;
-      try {
-        editor.setComponents(v);
-      } catch (e) {
-        // ignore
-      }
+/*
+  Watch MJML source changes and update compiled HTML + editor when appropriate.
+  - When user edits MJML (html tab), compile MJML -> HTML and:
+    * update localHtml (compiled)
+    * if editor is visible (editor tab) or user is editing the mjml tab, setComponents so preview stays in sync
+*/
+watch(localMjml, (v) => {
+  try {
+    if (!v || typeof mjml2html !== 'function') {
+      return;
     }
-  }
-);
-
-// Watch localHtml changes (from textarea) and push to editor when in HTML tab
-watch(localHtml, (v) => {
-  if (editor && activeTab.value === 'html') {
-    try {
-      editor.setComponents(v);
-    } catch (e) {
-      // ignore
-    }
-    // emit html change and grapes snapshot
-    emits('update:html', v);
-    const grapesData = {
-      html: v,
-      css: editor && editor.getCss ? editor.getCss() : '',
-      components: editor && editor.getComponents ? editor.getComponents() : '',
-      style: editor && editor.getStyle ? editor.getStyle() : '',
-    };
-    emits('update:grapes', JSON.stringify(grapesData));
+    console.log(`localMjml watch: ${v}`)
+    const res = mjml2html(v, { keepComments: false });
+    const compiled = (res && (res as any).html) || '';
+    // emit mjml and compiled html to parent
+    emits('update:mjml', v);
+    emits('update:html', compiled);
+  } catch (e) {
+    // ignore compilation errors
+    console.log(`localMjml error: `, e);
   }
 });
 </script>
@@ -500,15 +494,24 @@ watch(localHtml, (v) => {
   width: 100% !important;
   box-sizing: border-box;
 }
+
 ::v-deep .gjs-editor {
   width: 100% !important;
   min-width: 0;
 }
+
 ::v-deep .gjs-frame {
   width: 100% !important;
   min-width: 0;
 }
+
 ::v-deep .gjs-cv {
   max-width: none !important;
+}
+
+.local-pre {
+  display: inline-block;
+  background-color: #f0f0f0;
+  padding: 1px;
 }
 </style>

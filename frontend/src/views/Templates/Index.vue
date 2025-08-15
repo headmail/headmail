@@ -145,17 +145,14 @@
             <!-- HTML / GrapesJS Body -->
             <div>
               <label for="body_html" class="block text-sm font-semibold text-gray-900 mb-2">
-                HTML 본문
+                콘텐츠
               </label>
               <div class="relative">
                 <TemplateEditor
-                  :modelValueHtml="templateForm.body_html"
                   :modelValueMjml="templateForm.body_mjml"
-                  :modelValueGrapes="templateForm.grapes_json"
                   :fullscreen="fullscreen"
                   @update:html="(v) => templateForm.body_html = v"
                   @update:mjml="(v) => templateForm.body_mjml = v"
-                  @update:grapes="(v) => templateForm.grapes_json = v"
                 />
               </div>
             </div>
@@ -221,8 +218,6 @@ const templateForm = reactive({
   body_html: '',
   body_mjml: '',
   body_text: '',
-  // GrapesJS project JSON (stringified)
-  grapes_json: '',
 });
 
 const fetchTemplates = async () => {
@@ -262,8 +257,6 @@ const editTemplate = (template: Template) => {
   templateForm.body_html = template.body_html || '';
   templateForm.body_mjml = template.body_mjml || '';
   templateForm.body_text = template.body_text || '';
-  // attempt to read grapes_json if present on the template object
-  templateForm.grapes_json = (template as any).grapes_json ? (template as any).grapes_json : '';
   showCreateModal.value = true;
 };
 
@@ -290,7 +283,6 @@ const closeModal = () => {
   templateForm.body_html = '';
   templateForm.body_mjml = '';
   templateForm.body_text = '';
-  templateForm.grapes_json = '';
   fullscreen.value = false;
 };
 

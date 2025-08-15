@@ -1084,6 +1084,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/templates/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Render template preview
+         * @description Renders provided template HTML/text/subject with sample data (name, email) and returns rendered output.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Preview request */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tx": {
         parameters: {
             query?: never;
@@ -1458,6 +1502,19 @@ export interface components {
         "github_com_headmail_headmail_pkg_api_admin_dto.PatchSubscribersRequest": {
             add?: string[];
             remove?: string[];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateRequest": {
+            email?: string;
+            /** @description Sample subscriber fields used during rendering */
+            name?: string;
+            subject?: string;
+            templateHtml?: string;
+            templateText?: string;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateResponse": {
+            html?: string;
+            subject?: string;
+            text?: string;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest": {
             subscribers?: string[];

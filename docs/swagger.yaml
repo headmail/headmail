@@ -552,6 +552,29 @@ components:
           type: array
           uniqueItems: false
       type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateRequest:
+      properties:
+        email:
+          type: string
+        name:
+          description: Sample subscriber fields used during rendering
+          type: string
+        subject:
+          type: string
+        templateHtml:
+          type: string
+        templateText:
+          type: string
+      type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateResponse:
+      properties:
+        html:
+          type: string
+        subject:
+          type: string
+        text:
+          type: string
+      type: object
     github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest:
       properties:
         subscribers:
@@ -1363,6 +1386,27 @@ paths:
                 $ref: '#/components/schemas/domain.Template'
           description: OK
       summary: Update a template
+      tags:
+      - templates
+  /templates/preview:
+    post:
+      description: Renders provided template HTML/text/subject with sample data (name,
+        email) and returns rendered output.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateRequest'
+        description: Preview request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateResponse'
+          description: OK
+      summary: Render template preview
       tags:
       - templates
   /tx:

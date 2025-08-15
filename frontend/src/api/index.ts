@@ -149,6 +149,22 @@ export const deleteTemplate = async (templateID: string) => {
     return resp.data;
 };
 
+// Preview template server-side (renders template with sample data).
+// Uses generated types from ../generated/api-types to avoid `any`.
+export const previewTemplate = async (
+    req: paths["/templates/preview"]["post"]["requestBody"]["content"]["application/json"]
+): Promise<
+    paths["/templates/preview"]["post"]["responses"][200]["content"]["application/json"]
+> => {
+    const resp = await POST("/templates/preview", {
+        body: req,
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+    return resp.data;
+};
+
 // Subscribers of a specific list
 export const getSubscribersOfList = async (listID: string, params?: paths["/lists/{listID}/subscribers"]["get"]["parameters"]["query"]) => {
     const resp = await GET("/lists/{listID}/subscribers", { params: { path: { listID }, query: params }});
