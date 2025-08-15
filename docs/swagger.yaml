@@ -186,6 +186,8 @@ components:
       - CampaignStatusCancelled
     domain.Delivery:
       properties:
+        attempts:
+          type: integer
         body_html:
           description: HTML body
           type: string
@@ -239,6 +241,8 @@ components:
           type: integer
         scheduled_at:
           description: Scheduled time
+          type: integer
+        send_scheduled_at:
           type: integer
         sent_at:
           description: Time of sending
@@ -432,6 +436,7 @@ components:
           type: array
           uniqueItems: false
         scheduled_at:
+          description: ScheduledAt seconds
           type: integer
       type: object
     github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse:
@@ -470,6 +475,16 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/domain.SubscriberStatus'
+      type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscribersRequest:
+      properties:
+        append:
+          type: boolean
+        subscribers:
+          items:
+            $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest'
+          type: array
+          uniqueItems: false
       type: object
     github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest:
       properties:
@@ -514,6 +529,27 @@ components:
           type: object
         name:
           type: string
+      type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.PatchSubscribersRequest:
+      properties:
+        add:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+        remove:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
+      type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest:
+      properties:
+        subscribers:
+          items:
+            type: string
+          type: array
+          uniqueItems: false
       type: object
     github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest:
       properties:
@@ -976,6 +1012,28 @@ paths:
       summary: List subscribers
       tags:
       - subscribers
+    patch:
+      description: Add or remove subscribers to/from a list
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.PatchSubscribersRequest'
+        description: Patch request
+        required: true
+      responses:
+        "204":
+          description: No Content
+      summary: Patch subscribers in a list (add/remove)
+      tags:
+      - lists
     post:
       description: Add subscribers to a list
       parameters:
@@ -1002,6 +1060,28 @@ paths:
       summary: Add subscribers to a list
       tags:
       - subscribers
+    put:
+      description: Replace list members atomically
+      parameters:
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest'
+        description: Replace request
+        required: true
+      responses:
+        "204":
+          description: No Content
+      summary: Replace subscribers in a list
+      tags:
+      - lists
   /subscribers:
     get:
       description: List subscribers
