@@ -112,6 +112,8 @@ type Template struct {
 	Name      string `gorm:"column:name"`
 	BodyHTML  string `gorm:"column:body_html"`
 	BodyText  string `gorm:"column:body_text"`
+	// BodyMJML stores the optional MJML source for the template.
+	BodyMJML string `gorm:"column:body_mjml"`
 }
 
 // QueueItem is the GORM model for a generic queue entry.

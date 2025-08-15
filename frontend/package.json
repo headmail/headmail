@@ -10,6 +10,10 @@
     "generate:types": "openapi-typescript ../docs/swagger.yaml -o src/generated/api-types.ts"
   },
   "dependencies": {
+    "grapesjs": "^0.22.12",
+    "grapesjs-mjml": "^1.0.7",
+    "grapesjs-preset-newsletter": "^1.0.2",
+    "mjml-browser": "^4.15.3",
     "openapi-fetch": "^0.14.0",
     "openapi-typescript": "^7.8.0",
     "openapi-typescript-fetch": "^2.2.1",

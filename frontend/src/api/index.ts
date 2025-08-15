@@ -119,7 +119,7 @@ export const getTemplates = async (params: paths["/templates"]["get"]["parameter
     const resp = await GET("/templates", {params: {query: params}});
     return resp.data;
 };
-export const createTemplate = async (req: paths["/templates"]["post"]["requestBody"]["content"]["application/json"]) => {
+export const createTemplate = async (req: paths["/templates"]['post']['requestBody']['content']['application/json']) => {
     const resp = await POST("/templates", {
         body: req,
         headers: {
@@ -132,7 +132,7 @@ export const getTemplate = async (templateID: string) => {
     const resp = await GET("/templates/{templateID}", {params: {path: {templateID}}});
     return resp.data;
 };
-export const updateTemplate = async (templateID: string, req: paths["/templates/{templateID}"]["put"]["requestBody"]["content"]["application/json"]) => {
+export const updateTemplate = async (templateID: string, req: paths["/templates/{templateID}"]['put']['requestBody']['content']['application/json']) => {
     const resp = await PUT("/templates/{templateID}", {
         params: {
             path: {templateID},

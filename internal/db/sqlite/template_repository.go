@@ -72,14 +72,16 @@ func (r *templateRepository) List(ctx context.Context, pagination repository.Pag
 }
 
 func toTemplateGorm(d *domain.Template) *Template {
-	return &Template{
+	t := &Template{
 		ID:        d.ID,
 		Name:      d.Name,
 		BodyHTML:  d.BodyHTML,
 		BodyText:  d.BodyText,
+		BodyMJML:  d.BodyMJML,
 		CreatedAt: d.CreatedAt,
 		UpdatedAt: d.UpdatedAt,
 	}
+	return t
 }
 
 func toTemplateDomain(g *Template) *domain.Template {
@@ -88,6 +90,7 @@ func toTemplateDomain(g *Template) *domain.Template {
 		Name:      g.Name,
 		BodyHTML:  g.BodyHTML,
 		BodyText:  g.BodyText,
+		BodyMJML:  g.BodyMJML,
 		CreatedAt: g.CreatedAt,
 		UpdatedAt: g.UpdatedAt,
 	}

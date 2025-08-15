@@ -561,7 +561,36 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        /**
+         * Replace subscribers in a list
+         * @description Replace list members atomically
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Replace request */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         /**
          * Add subscribers to a list
          * @description Add subscribers to a list
@@ -594,6 +623,143 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch subscribers in a list (add/remove)
+         * @description Add or remove subscribers to/from a list
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Patch request */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.PatchSubscribersRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/r/{deliveryID}/c": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Track click and redirect
+         * @description Records a click event and redirects to the original URL.
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description URL encoded target */
+                    u: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Delivery ID */
+                    deliveryID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Redirect */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/r/{deliveryID}/o": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Track open (1x1 pixel)
+         * @description Records an open event for a delivery and returns a 1x1 transparent PNG (or configured image).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Delivery ID */
+                    deliveryID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": Record<string, never>;
+                        "image/png": string;
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1098,6 +1264,7 @@ export interface components {
         };
         "domain.CampaignStatus": string;
         "domain.Delivery": {
+            attempts?: number;
             /** @description HTML body */
             body_html?: string;
             /** @description Text body */
@@ -1136,6 +1303,7 @@ export interface components {
             opened_at?: number;
             /** @description Scheduled time */
             scheduled_at?: number;
+            send_scheduled_at?: number;
             /** @description Time of sending */
             sent_at?: number;
             status?: components["schemas"]["domain.DeliveryStatus"];
@@ -1199,6 +1367,9 @@ export interface components {
         "domain.Template": {
             /** @description HTML content of the template */
             body_html?: string;
+            /** @description BodyMJML holds the MJML source (optional). If provided, MJML will be
+             *     compiled to HTML for preview/editing/preview. */
+            body_mjml?: string;
             /** @description Text content of the template */
             body_text?: string;
             /** @description Unix timestamp seconds */
@@ -1233,6 +1404,7 @@ export interface components {
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest": {
             individuals?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.Individual"][];
             lists?: string[];
+            /** @description ScheduledAt seconds */
             scheduled_at?: number;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse": {
@@ -1250,8 +1422,14 @@ export interface components {
             name?: string;
             status?: components["schemas"]["domain.SubscriberStatus"];
         };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscribersRequest": {
+            append?: boolean;
+            subscribers?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest"][];
+        };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest": {
             body_html?: string;
+            /** @description BodyMJML allows clients to submit MJML source which can be compiled to HTML later. */
+            body_mjml?: string;
             body_text?: string;
             name?: string;
         };
@@ -1276,6 +1454,13 @@ export interface components {
                 [key: string]: string;
             };
             name?: string;
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.PatchSubscribersRequest": {
+            add?: string[];
+            remove?: string[];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest": {
+            subscribers?: string[];
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest": {
             data?: {
@@ -1309,6 +1494,8 @@ export interface components {
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest": {
             body_html?: string;
+            /** @description BodyMJML allows clients to submit MJML source which can be compiled to HTML later. */
+            body_mjml?: string;
             body_text?: string;
             name?: string;
         };

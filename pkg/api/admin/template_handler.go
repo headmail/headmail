@@ -54,6 +54,7 @@ func (h *TemplateHandler) createTemplate(w http.ResponseWriter, r *http.Request)
 		Name:     req.Name,
 		BodyHTML: req.BodyHTML,
 		BodyText: req.BodyText,
+		BodyMJML: req.BodyMJML,
 	}
 
 	if err := h.service.CreateTemplate(r.Context(), template); err != nil {
@@ -106,6 +107,7 @@ func (h *TemplateHandler) updateTemplate(w http.ResponseWriter, r *http.Request)
 		Name:     req.Name,
 		BodyHTML: req.BodyHTML,
 		BodyText: req.BodyText,
+		BodyMJML: req.BodyMJML,
 	}
 
 	if err := h.service.UpdateTemplate(r.Context(), template); err != nil {

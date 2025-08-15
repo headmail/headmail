@@ -95,7 +95,7 @@
 
     <!-- Create/Edit Modal -->
     <div v-if="showCreateModal || editingTemplate" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+      <div :class="['bg-white shadow-2xl w-full overflow-hidden', fullscreen ? 'rounded-none max-w-none h-screen' : 'rounded-2xl max-w-6xl max-h-[90vh]']">
         <!-- Modal Header -->
         <div class="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
           <div class="flex items-center justify-between">
@@ -105,13 +105,23 @@
               </h2>
               <p class="text-gray-600 mt-1">이메일 캠페인에 사용할 템플릿을 작성하세요</p>
             </div>
-            <button 
-              @click="closeModal"
-              class="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200">
-              <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
+            <div class="flex items-center">
+              <button
+                @click="fullscreen = !fullscreen"
+                :title="fullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+                class="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200 mr-2">
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 3H5a2 2 0 00-2 2v3m0 8v3a2 2 0 002 2h3M16 3h3a2 2 0 012 2v3M21 16v3a2 2 0 01-2 2h-3"></path>
+                </svg>
+              </button>
+              <button 
+                @click="closeModal"
+                class="p-2 hover:bg-gray-100 rounded-full transition-colors duration-200">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -132,23 +142,21 @@
                 required>
             </div>
 
-            <!-- HTML Body -->
+            <!-- HTML / GrapesJS Body -->
             <div>
               <label for="body_html" class="block text-sm font-semibold text-gray-900 mb-2">
                 HTML 본문
               </label>
               <div class="relative">
-                <textarea 
-                  v-model="templateForm.body_html" 
-                  id="body_html" 
-                  rows="12" 
-                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-mono text-sm"
-                  placeholder="HTML 형식의 이메일 본문을 입력하세요..."></textarea>
-                <div class="absolute top-3 right-3">
-                  <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                    HTML
-                  </span>
-                </div>
+                <TemplateEditor
+                  :modelValueHtml="templateForm.body_html"
+                  :modelValueMjml="templateForm.body_mjml"
+                  :modelValueGrapes="templateForm.grapes_json"
+                  :fullscreen="fullscreen"
+                  @update:html="(v) => templateForm.body_html = v"
+                  @update:mjml="(v) => templateForm.body_mjml = v"
+                  @update:grapes="(v) => templateForm.grapes_json = v"
+                />
               </div>
             </div>
 
@@ -198,6 +206,7 @@ import { ref, onMounted, reactive } from 'vue';
 import { getTemplates, createTemplate, updateTemplate, deleteTemplate } from '../../api';
 import type { Template, PaginationResponse } from '../../types';
 import Pagination from '../../components/Pagination.vue';
+import TemplateEditor from '../../components/TemplateEditor.vue';
 
 const templates = ref<Template[]>([]);
 const pagination = ref<PaginationResponse | null>(null);
@@ -205,11 +214,15 @@ const currentPage = ref(1);
 const limit = ref(20);
 const showCreateModal = ref(false);
 const editingTemplate = ref<Template | null>(null);
+const fullscreen = ref(false);
 
 const templateForm = reactive({
   name: '',
   body_html: '',
+  body_mjml: '',
   body_text: '',
+  // GrapesJS project JSON (stringified)
+  grapes_json: '',
 });
 
 const fetchTemplates = async () => {
@@ -247,7 +260,10 @@ const editTemplate = (template: Template) => {
   editingTemplate.value = template;
   templateForm.name = template.name || '';
   templateForm.body_html = template.body_html || '';
+  templateForm.body_mjml = template.body_mjml || '';
   templateForm.body_text = template.body_text || '';
+  // attempt to read grapes_json if present on the template object
+  templateForm.grapes_json = (template as any).grapes_json ? (template as any).grapes_json : '';
   showCreateModal.value = true;
 };
 
@@ -272,7 +288,10 @@ const closeModal = () => {
   editingTemplate.value = null;
   templateForm.name = '';
   templateForm.body_html = '';
+  templateForm.body_mjml = '';
   templateForm.body_text = '';
+  templateForm.grapes_json = '';
+  fullscreen.value = false;
 };
 
 onMounted(fetchTemplates);
