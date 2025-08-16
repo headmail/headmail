@@ -1422,6 +1422,8 @@ export interface components {
             id?: string;
             /** @description Template name */
             name?: string;
+            /** @description Default subject for the template */
+            subject?: string;
             /** @description Unix timestamp seconds */
             updated_at?: number;
         };
@@ -1440,6 +1442,7 @@ export interface components {
             subject?: string;
             tags?: string[];
             template_html?: string;
+            template_id?: string;
             template_text?: string;
             utm_params?: {
                 [key: string]: string;
@@ -1476,6 +1479,7 @@ export interface components {
             body_mjml?: string;
             body_text?: string;
             name?: string;
+            subject?: string;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest": {
             data?: {
@@ -1534,6 +1538,7 @@ export interface components {
             subject?: string;
             tags?: string[];
             template_html?: string;
+            template_id?: string;
             template_text?: string;
             utm_params?: {
                 [key: string]: string;
@@ -1555,6 +1560,7 @@ export interface components {
             body_mjml?: string;
             body_text?: string;
             name?: string;
+            subject?: string;
         };
     };
     responses: never;

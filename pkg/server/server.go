@@ -49,6 +49,7 @@ type Server struct {
 	campaignService service.CampaignServiceProvider
 	deliveryService service.DeliveryServiceProvider
 	templateService service.TemplateServiceProvider
+	trackingService service.TrackingServiceProvider
 }
 
 // Option defines a function that configures a Server.
@@ -124,6 +125,8 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 
 	srv.templateService = service.NewTemplateService(srv.db)
 
+	srv.trackingService = service.NewTrackingService(srv.db)
+
 	// Register routes
 	srv.registerMiddlewares()
 	srv.registerAdminRoutes()
@@ -156,8 +159,10 @@ func (s *Server) registerAdminRoutes() {
 }
 
 func (s *Server) registerPublicRoutes() {
+	trackingHandler := public.NewTrackingHandler(&s.cfg.Tracking, s.trackingService)
+
 	// Public tracking routes (open / click)
-	public.RegisterRoutes(s.publicRouter, s.db, s.cfg)
+	trackingHandler.RegisterRoutes(s.publicRouter)
 }
 
 // Serve starts the admin and public API servers.

@@ -389,6 +389,9 @@ components:
         name:
           description: Template name
           type: string
+        subject:
+          description: Default subject for the template
+          type: string
         updated_at:
           description: Unix timestamp seconds
           type: integer
@@ -420,6 +423,8 @@ components:
           type: array
           uniqueItems: false
         template_html:
+          type: string
+        template_id:
           type: string
         template_text:
           type: string
@@ -502,6 +507,8 @@ components:
         body_text:
           type: string
         name:
+          type: string
+        subject:
           type: string
       type: object
     github_com_headmail_headmail_pkg_api_admin_dto.CreateTransactionalDeliveryRequest:
@@ -611,6 +618,8 @@ components:
           uniqueItems: false
         template_html:
           type: string
+        template_id:
+          type: string
         template_text:
           type: string
         utm_params:
@@ -650,6 +659,8 @@ components:
         body_text:
           type: string
         name:
+          type: string
+        subject:
           type: string
       type: object
 externalDocs:

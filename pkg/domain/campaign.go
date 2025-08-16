@@ -20,7 +20,7 @@ type Campaign struct {
 	FromName     string                 `json:"from_name"`              // Sender's name
 	FromEmail    string                 `json:"from_email"`             // Sender's email
 	Subject      string                 `json:"subject"`                // Subject template
-	TemplateID   *string                `json:"template_id,omitempty"`  // Optional template ID
+	TemplateID   *string                `json:"template_id"`            // Optional template ID
 	TemplateHTML string                 `json:"template_html"`          // HTML template
 	TemplateText string                 `json:"template_text"`          // Plain text template
 	Data         map[string]interface{} `json:"data"`                   // JSON data for templates

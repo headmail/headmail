@@ -120,6 +120,7 @@ import mjml2html from 'mjml-browser';
 import {previewTemplate} from '../api';
 
 const props = defineProps<{
+  subject?: string;
   modelValueMjml?: string;
   modelValueHtml?: string;
   fullscreen?: boolean;
@@ -139,7 +140,7 @@ const containerStyle = computed(() => {
   } as Record<string, string>;
 });
 
-const emits = defineEmits(['update:html', 'update:grapes', 'update:mjml']);
+const emits = defineEmits(['update:html', 'update:grapes', 'update:mjml', 'update:subject']);
 
 const editorContainer = ref<HTMLElement | null>(null);
 let editor: any = null;
@@ -310,12 +311,24 @@ const loadSample = (s: { id: string; name: string; html?: string; mjml?: string 
 // Server preview state
 const sampleName = ref('John Doe');
 const sampleEmail = ref('john@example.com');
-const subjectInput = ref('');
+const subjectInput = ref(props.subject || '');
 const serverPreviewHtml = ref('');
 const serverPreviewText = ref('');
 const serverPreviewSubject = ref('');
 const previewLoading = ref(false);
 const previewError = ref('');
+
+// Keep subject in sync with parent prop and notify parent on changes
+watch(
+  () => props.subject,
+  (v) => {
+    subjectInput.value = v || '';
+  }
+);
+
+watch(subjectInput, (v) => {
+  emits('update:subject', v);
+});
 
 /**
  * Request server-side rendering of the current template HTML + subject using sample data.

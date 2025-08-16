@@ -9,21 +9,33 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/headmail/headmail/pkg/config"
-	"github.com/headmail/headmail/pkg/domain"
-	"github.com/headmail/headmail/pkg/repository"
+	"github.com/headmail/headmail/pkg/service"
 )
 
 // Default 1x1 transparent PNG
 var transparentPNG, _ = base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=")
 
+// TrackingHandler handles HTTP requests for deliveries.
+type TrackingHandler struct {
+	cfg     *config.TrackingConfig
+	service service.TrackingServiceProvider
+}
+
+// NewTrackingHandler creates a new TrackingHandler.
+func NewTrackingHandler(cfg *config.TrackingConfig, service service.TrackingServiceProvider) *TrackingHandler {
+	return &TrackingHandler{
+		cfg:     cfg,
+		service: service,
+	}
+}
+
 // RegisterRoutes registers tracking routes on the provided router.
-func RegisterRoutes(r chi.Router, db repository.DB, cfg *config.Config) {
-	r.Get("/r/{deliveryID}/o", openHandler(db, cfg))
-	r.Get("/r/{deliveryID}/c", clickHandler(db, cfg))
+func (h *TrackingHandler) RegisterRoutes(r chi.Router) {
+	r.Get("/r/{deliveryID}/o", h.openHandler)
+	r.Get("/r/{deliveryID}/c", h.clickHandler)
 }
 
 // @Summary Track open (1x1 pixel)
@@ -34,62 +46,45 @@ func RegisterRoutes(r chi.Router, db repository.DB, cfg *config.Config) {
 // @Success 200 {file} binary image
 // @Failure 400 {object} map[string]string
 // @Router /r/{deliveryID}/o [get]
-func openHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		deliveryID := chi.URLParam(r, "deliveryID")
-		if deliveryID == "" {
-			http.Error(w, "missing delivery id", http.StatusBadRequest)
+func (h *TrackingHandler) openHandler(w http.ResponseWriter, r *http.Request) {
+	deliveryID := chi.URLParam(r, "deliveryID")
+	if deliveryID == "" {
+		http.Error(w, "missing delivery id", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	ua := r.UserAgent()
+	ip := extractRemoteIP(r)
+
+	if err := h.service.LogOpenEvent(ctx, deliveryID, &ua, &ip); err != nil {
+		log.Printf("log open event failed: %+v", err)
+	}
+
+	// Serve image
+	if h.cfg.ImagePath != "" {
+		// If ImagePath is a URL (starts with http/https) just redirect to it
+		if strings.HasPrefix(h.cfg.ImagePath, "http://") || strings.HasPrefix(h.cfg.ImagePath, "https://") {
+			http.Redirect(w, r, h.cfg.ImagePath, http.StatusFound)
 			return
 		}
-
-		ctx := r.Context()
-		now := time.Now().Unix()
-
-		ua := r.UserAgent()
-		ip := extractRemoteIP(r)
-
-		ev := &domain.DeliveryEvent{
-			DeliveryID: deliveryID,
-			EventType:  domain.EventTypeOpened,
-			EventData:  map[string]interface{}{},
-			UserAgent:  &ua,
-			IPAddress:  &ip,
-			CreatedAt:  now,
-		}
-
-		// Atomically increment open count (repository will set OpenedAt on first open)
-		if err := db.DeliveryRepository().IncrementCount(ctx, deliveryID, domain.EventTypeOpened); err != nil {
-			log.Printf("tracking: failed to increment open count for %s: %v", deliveryID, err)
-		}
-
-		// store event synchronously
-		_ = db.EventRepository().Create(ctx, ev)
-
-		// Serve image
-		if cfg != nil && cfg.Tracking.ImagePath != "" {
-			// If ImagePath is a URL (starts with http/https) just redirect to it
-			if strings.HasPrefix(cfg.Tracking.ImagePath, "http://") || strings.HasPrefix(cfg.Tracking.ImagePath, "https://") {
-				http.Redirect(w, r, cfg.Tracking.ImagePath, http.StatusFound)
+		// Try to serve local file
+		if f, err := os.Open(h.cfg.ImagePath); err == nil {
+			defer f.Close()
+			stat, err := f.Stat()
+			if err == nil {
+				http.ServeContent(w, r, filepath.Base(h.cfg.ImagePath), stat.ModTime(), f)
 				return
 			}
-			// Try to serve local file
-			if f, err := os.Open(cfg.Tracking.ImagePath); err == nil {
-				defer f.Close()
-				stat, err := f.Stat()
-				if err == nil {
-					http.ServeContent(w, r, filepath.Base(cfg.Tracking.ImagePath), stat.ModTime(), f)
-					return
-				}
-			}
-			// fallback to default if file not readable
 		}
-
-		// default: return 1x1 transparent PNG (no-cache)
-		w.Header().Set("Content-Type", "image/png")
-		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(transparentPNG)
+		// fallback to default if file not readable
 	}
+
+	// default: return 1x1 transparent PNG (no-cache)
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(transparentPNG)
 }
 
 // @Summary Track click and redirect
@@ -100,55 +95,38 @@ func openHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
 // @Success 302 "Redirect"
 // @Failure 400 {object} map[string]string
 // @Router /r/{deliveryID}/c [get]
-func clickHandler(db repository.DB, cfg *config.Config) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		deliveryID := chi.URLParam(r, "deliveryID")
-		if deliveryID == "" {
-			http.Error(w, "missing delivery id", http.StatusBadRequest)
-			return
-		}
-		u := r.URL.Query().Get("u")
-		if u == "" {
-			http.Error(w, "missing url param 'u'", http.StatusBadRequest)
-			return
-		}
-		decoded, err := url.QueryUnescape(u)
-		if err != nil {
-			http.Error(w, "invalid url", http.StatusBadRequest)
-			return
-		}
-		target, err := url.Parse(decoded)
-		if err != nil || !isAllowedScheme(target.Scheme) {
-			http.Error(w, "invalid or unsupported url scheme", http.StatusBadRequest)
-			return
-		}
-
-		ctx := r.Context()
-		now := time.Now().Unix()
-		ua := r.UserAgent()
-		ip := extractRemoteIP(r)
-
-		ev := &domain.DeliveryEvent{
-			DeliveryID: deliveryID,
-			EventType:  domain.EventTypeClicked,
-			EventData:  map[string]interface{}{"url": decoded},
-			UserAgent:  &ua,
-			IPAddress:  &ip,
-			URL:        &decoded,
-			CreatedAt:  now,
-		}
-
-		// Atomically increment click count
-		if err := db.DeliveryRepository().IncrementCount(ctx, deliveryID, domain.EventTypeClicked); err != nil {
-			log.Printf("tracking: failed to increment click count for %s: %v", deliveryID, err)
-		}
-
-		// record click synchronously
-		_ = db.EventRepository().Create(ctx, ev)
-
-		// Redirect
-		http.Redirect(w, r, decoded, http.StatusFound)
+func (h *TrackingHandler) clickHandler(w http.ResponseWriter, r *http.Request) {
+	deliveryID := chi.URLParam(r, "deliveryID")
+	if deliveryID == "" {
+		http.Error(w, "missing delivery id", http.StatusBadRequest)
+		return
 	}
+	u := r.URL.Query().Get("u")
+	if u == "" {
+		http.Error(w, "missing url param 'u'", http.StatusBadRequest)
+		return
+	}
+	decoded, err := url.QueryUnescape(u)
+	if err != nil {
+		http.Error(w, "invalid url", http.StatusBadRequest)
+		return
+	}
+	target, err := url.Parse(decoded)
+	if err != nil || !isAllowedScheme(target.Scheme) {
+		http.Error(w, "invalid or unsupported url scheme", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	ua := r.UserAgent()
+	ip := extractRemoteIP(r)
+
+	if err := h.service.LogClickEvent(ctx, deliveryID, &ua, &ip, decoded); err != nil {
+		log.Printf("log click event failed: %+v", err)
+	}
+
+	// Redirect
+	http.Redirect(w, r, decoded, http.StatusFound)
 }
 
 func isAllowedScheme(s string) bool {

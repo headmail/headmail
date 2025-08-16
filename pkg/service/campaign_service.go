@@ -98,14 +98,21 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 		return 0, err
 	}
 
-	// If TemplateID is provided, fetch the template and override HTML/Text
-	if campaign.TemplateID != nil && *campaign.TemplateID != "" {
+	// Use TemplateHTML/Text from campaign if present; otherwise, if TemplateID provided fetch missing parts from template.
+	if (campaign.TemplateHTML == "" || campaign.TemplateText == "") && campaign.TemplateID != nil && *campaign.TemplateID != "" {
 		tmpl, err := s.templateRepo.GetByID(ctx, *campaign.TemplateID)
 		if err != nil {
 			return 0, err
 		}
-		campaign.TemplateHTML = tmpl.BodyHTML
-		campaign.TemplateText = tmpl.BodyText
+		if campaign.TemplateHTML == "" {
+			campaign.TemplateHTML = tmpl.BodyHTML
+		}
+		if campaign.TemplateText == "" {
+			campaign.TemplateText = tmpl.BodyText
+		}
+		if campaign.Subject == "" {
+			campaign.Subject = tmpl.Subject
+		}
 	}
 
 	// 2. Prepare deliveries

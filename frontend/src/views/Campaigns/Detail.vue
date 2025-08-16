@@ -20,8 +20,28 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700">제목</label>
-            <input v-model="campaign.subject" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
+            <input v-model="campaign.subject" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" :placeholder="subjectPlaceholder" />
           </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">템플릿</label>
+          <div class="flex items-center gap-2 mt-1">
+            <div class="flex-1">
+              <div class="text-sm text-gray-700" v-if="selectedTemplateName">{{ selectedTemplateName }}</div>
+              <div class="text-sm text-gray-500" v-else>템플릿을 선택하거나 HTML/Text를 직접 입력하세요.</div>
+            </div>
+            <button @click="openPicker" type="button" class="px-3 py-2 border rounded bg-white hover:bg-gray-50">템플릿 선택</button>
+            <button @click="clearTemplate" type="button" class="px-3 py-2 border rounded bg-white hover:bg-gray-50">선택 해제</button>
+          </div>
+        </div>
+
+        <div v-if="!campaign.template_id" class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">HTML 템플릿</label>
+          <textarea v-model="campaign.template_html" rows="10" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+
+          <label class="block text-sm font-medium text-gray-700 mt-3">Plain Text</label>
+          <textarea v-model="campaign.template_text" rows="6" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+        </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -44,14 +64,22 @@
         <DeliveryForm :campaignId="campaign.id" @saved="onDeliverySaved" @cancel="onDeliveryCancel" />
       </div>
     </div>
+
+    <TemplatePickerModal
+        :modelValue="pickerVisible"
+        :initialSelected="campaign ? campaign.template_id : null"
+        @update:modelValue="pickerVisible = $event"
+        @confirmed="onTemplateConfirmed"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import {ref, onMounted, computed} from 'vue';
 import { useRoute } from 'vue-router';
-import { getCampaign, updateCampaign } from '../../api';
+import { getCampaign, updateCampaign, getTemplate } from '../../api';
 import DeliveryForm from '../../components/DeliveryForm.vue';
+import TemplatePickerModal from '../../components/TemplatePickerModal.vue';
 import type { Campaign } from '../../types';
 
 const route = useRoute();
@@ -60,16 +88,40 @@ const campaign = ref<Campaign>({
   name: '',
   subject: '',
   status: '',
-} as Campaign);
+  template_id: null,
+  template_html: '',
+  template_text: '',
+});
 const loading = ref(true);
 const activeTab = ref<'detail' | 'send'>('detail');
+
+const pickerVisible = ref(false);
+const selectedTemplateName = ref<string | null>(null);
+
+const subjectPlaceholder = computed(() => {
+  if (!campaign.value.template_id) {
+    return '';
+  } else {
+    return '템플릿의 제목으로 대체됩니다';
+  }
+});
 
 const fetchCampaign = async () => {
   loading.value = true;
   const campaignId = route.params.id as string;
   try {
     const resp = await getCampaign(campaignId);
-    campaign.value = resp;
+    campaign.value = {
+      ...resp,
+      template_id: (resp as any).template_id || (resp as any).templateID || null,
+      template_html: (resp as any).template_html || (resp as any).templateHTML || '',
+      template_text: (resp as any).template_text || (resp as any).templateText || '',
+    };
+    if (campaign.value.template_id) {
+      await loadTemplateName(campaign.value.template_id);
+    } else {
+      selectedTemplateName.value = null;
+    }
   } catch (err) {
     console.error('캠페인 로드 실패', err);
     alert('캠페인 로드에 실패했습니다.');
@@ -80,12 +132,47 @@ const fetchCampaign = async () => {
 
 onMounted(fetchCampaign);
 
+const openPicker = () => {
+  pickerVisible.value = true;
+};
+
+const clearTemplate = () => {
+  campaign.value.template_id = null;
+  selectedTemplateName.value = null;
+};
+
+const onTemplateConfirmed = async (templateID: string | null) => {
+  pickerVisible.value = false;
+  campaign.value.template_id = templateID;
+  campaign.value.subject = '';
+  if (templateID) {
+    await loadTemplateName(templateID);
+    campaign.value.template_html = '';
+    campaign.value.template_text = '';
+  } else {
+    selectedTemplateName.value = null;
+  }
+};
+
+const loadTemplateName = async (templateID: string) => {
+  try {
+    const tmpl = await getTemplate(templateID);
+    selectedTemplateName.value = tmpl?.name || tmpl?.id || templateID;
+  } catch (err) {
+    console.error('템플릿 이름 로드 실패', err);
+    selectedTemplateName.value = templateID;
+  }
+};
+
 const handleSave = async () => {
   if (!campaign.value || !campaign.value.id) return;
   try {
     await updateCampaign(campaign.value.id, {
       name: campaign.value.name,
       subject: campaign.value.subject,
+      template_id: campaign.value.template_id,
+      template_html: campaign.value.template_html,
+      template_text: campaign.value.template_text,
     } as any);
     alert('저장되었습니다.');
     await fetchCampaign();
@@ -96,15 +183,11 @@ const handleSave = async () => {
 };
 
 const onDeliverySaved = (resp: any) => {
-  // 사용자 요청에 따라 전송 후 목록 자동 표시를 하지 않음 — 단순 알림만 표시
   alert('전송 요청이 접수되었습니다.');
-  // 필요하면 캠페인 재조회
   fetchCampaign();
-  // 탭을 상세로 되돌릴지 여부는 남겨둠(현재는 그대로 둠)
 };
 
 const onDeliveryCancel = () => {
-  // 아무 동작 없이 상세 탭으로 전환
   activeTab.value = 'detail';
 };
 </script>

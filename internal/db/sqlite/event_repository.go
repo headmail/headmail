@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 )
@@ -57,6 +58,10 @@ func domainToDeliveryEventEntity(d *domain.DeliveryEvent) (*DeliveryEvent, error
 
 // Create stores a new delivery event.
 func (r *eventRepository) Create(ctx context.Context, event *domain.DeliveryEvent) error {
+	if event.ID == "" {
+		id, _ := uuid.NewV7()
+		event.ID = id.String()
+	}
 	entity, err := domainToDeliveryEventEntity(event)
 	if err != nil {
 		return err

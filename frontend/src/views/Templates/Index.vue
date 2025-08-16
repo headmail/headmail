@@ -151,8 +151,10 @@
                 <TemplateEditor
                   :modelValueMjml="templateForm.body_mjml"
                   :fullscreen="fullscreen"
+                  :subject="templateForm.subject"
                   @update:html="(v) => templateForm.body_html = v"
                   @update:mjml="(v) => templateForm.body_mjml = v"
+                  @update:subject="(v) => templateForm.subject = v"
                 />
               </div>
             </div>
@@ -215,6 +217,7 @@ const fullscreen = ref(false);
 
 const templateForm = reactive({
   name: '',
+  subject: '',
   body_html: '',
   body_mjml: '',
   body_text: '',
@@ -254,6 +257,7 @@ const saveTemplate = async () => {
 const editTemplate = (template: Template) => {
   editingTemplate.value = template;
   templateForm.name = template.name || '';
+  templateForm.subject = (template as any).subject || '';
   templateForm.body_html = template.body_html || '';
   templateForm.body_mjml = template.body_mjml || '';
   templateForm.body_text = template.body_text || '';
@@ -280,6 +284,7 @@ const closeModal = () => {
   showCreateModal.value = false;
   editingTemplate.value = null;
   templateForm.name = '';
+  templateForm.subject = '';
   templateForm.body_html = '';
   templateForm.body_mjml = '';
   templateForm.body_text = '';

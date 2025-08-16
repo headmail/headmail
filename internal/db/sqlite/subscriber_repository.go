@@ -232,11 +232,11 @@ func (r *subscriberRepository) ListStream(ctx context.Context, filter repository
 		defer close(ch)
 		defer rows.Close()
 		for rows.Next() {
-			row := &domain.Subscriber{}
+			row := &Subscriber{}
 			if err = db.ScanRows(rows, row); err != nil {
 				break
 			}
-			ch <- row
+			ch <- entityToSubscriberDomain(row)
 		}
 	}()
 

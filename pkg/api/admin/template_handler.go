@@ -57,6 +57,7 @@ func (h *TemplateHandler) createTemplate(w http.ResponseWriter, r *http.Request)
 
 	template := &domain.Template{
 		Name:     req.Name,
+		Subject:  req.Subject,
 		BodyHTML: req.BodyHTML,
 		BodyText: req.BodyText,
 		BodyMJML: req.BodyMJML,
@@ -163,6 +164,7 @@ func (h *TemplateHandler) updateTemplate(w http.ResponseWriter, r *http.Request)
 	template := &domain.Template{
 		ID:       templateID,
 		Name:     req.Name,
+		Subject:  req.Subject,
 		BodyHTML: req.BodyHTML,
 		BodyText: req.BodyText,
 		BodyMJML: req.BodyMJML,

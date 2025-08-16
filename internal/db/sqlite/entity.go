@@ -75,6 +75,8 @@ type Delivery struct {
 	Name            string                `gorm:"column:name"`
 	Email           string                `gorm:"column:email"`
 	Subject         string                `gorm:"column:subject"`
+	BodyHTML        string                `gorm:"column:body_html"`
+	BodyText        string                `gorm:"column:body_text"`
 	MessageID       *string               `gorm:"column:message_id"`
 	Data            JSON                  `gorm:"column:data;type:json"`
 	Headers         JSON                  `gorm:"column:headers;type:json"`
@@ -110,6 +112,7 @@ type Template struct {
 	CreatedAt int64  `gorm:"column:created_at"`
 	UpdatedAt int64  `gorm:"column:updated_at"`
 	Name      string `gorm:"column:name"`
+	Subject   string `gorm:"column:subject"`
 	BodyHTML  string `gorm:"column:body_html"`
 	BodyText  string `gorm:"column:body_text"`
 	// BodyMJML stores the optional MJML source for the template.

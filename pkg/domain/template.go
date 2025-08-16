@@ -4,6 +4,7 @@ package domain
 type Template struct {
 	ID       string `json:"id"`        // UUID
 	Name     string `json:"name"`      // Template name
+	Subject  string `json:"subject"`   // Default subject for the template
 	BodyHTML string `json:"body_html"` // HTML content of the template
 	BodyText string `json:"body_text"` // Text content of the template
 	// BodyMJML holds the MJML source (optional). If provided, MJML will be
