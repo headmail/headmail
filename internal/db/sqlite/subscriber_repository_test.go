@@ -15,7 +15,7 @@ import (
 
 func TestSubscriberRepository_CreateAndGet(t *testing.T) {
 	db := setupTestDB(t)
-	repo := NewSubscriberRepository(db)
+	repo := NewSubscriberRepository(&DB{db})
 
 	ctx := context.Background()
 	now := time.Now().Unix()

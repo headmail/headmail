@@ -17,7 +17,7 @@ import (
 func TestTransaction(t *testing.T) {
 	gormDB := setupTestDB(t)
 	db := &DB{gormDB}
-	repo := NewCampaignRepository(gormDB)
+	repo := NewCampaignRepository(db)
 
 	ctx := context.Background()
 
@@ -61,7 +61,7 @@ func TestTransaction(t *testing.T) {
 
 func TestCampaignRepository_List_WithTags(t *testing.T) {
 	db := setupTestDB(t)
-	repo := NewCampaignRepository(db)
+	repo := NewCampaignRepository(&DB{db})
 
 	ctx := context.Background()
 

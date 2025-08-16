@@ -27,7 +27,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 
 func TestListRepository_Create(t *testing.T) {
 	db := setupTestDB(t)
-	repo := NewListRepository(db)
+	repo := NewListRepository(&DB{db})
 
 	ctx := context.Background()
 	now := time.Now().Unix()
