@@ -332,9 +332,9 @@ const modalInitialSelected = ref<string[] | null>(null);
 
 // manageSubscribers opens the subscriber picker for a list, preloading current subscribers.
 const manageSubscribers = async (list: List) => {
-  modalListId.value = list.id;
+  modalListId.value = list.id!!;
   try {
-    const res = await getSubscribersOfList(list.id, { page: 1, limit: 1000 });
+    const res = await getSubscribersOfList(list.id!!, { page: 1, limit: 1000 });
     if (res && typeof res === 'object' && 'data' in res) {
       const data = (res as any).data || [];
       modalInitialSelected.value = data.map((s: any) => s.id);

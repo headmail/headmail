@@ -34,7 +34,7 @@
               <input type="radio" name="template" :value="it.id" v-model="selectedLocal" />
               <div>
                 <div class="text-sm font-medium text-gray-900">{{ it.name || it.id }}</div>
-                <div class="text-xs text-gray-500">{{ it.description || '' }}</div>
+<!--                <div class="text-xs text-gray-500">description</div>-->
               </div>
             </div>
             <div class="text-xs text-gray-400">{{ it.created_at ? new Date(it.created_at*1000).toLocaleDateString() : '' }}</div>

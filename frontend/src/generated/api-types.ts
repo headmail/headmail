@@ -148,7 +148,63 @@ export interface paths {
                 };
             };
         };
-        post?: never;
+        /**
+         * Create or upsert a campaign with given ID
+         * @description Create a campaign specifying the ID in the path. Use ?upsert=true to update an existing campaign with the same ID.
+         */
+        post: {
+            parameters: {
+                query?: {
+                    /** @description Upsert if exists */
+                    upsert?: boolean;
+                };
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            /** @description Campaign to create */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["domain.Campaign"];
+                    };
+                };
+                /** @description Bad request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: string;
+                        };
+                    };
+                };
+                /** @description Conflict - ID already exists */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+        };
         /**
          * Delete a campaign
          * @description Delete a campaign
@@ -529,8 +585,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List subscribers
-         * @description List subscribers
+         * List subscribers in a list
+         * @description List subscribers in a list
          */
         get: {
             parameters: {
@@ -545,7 +601,10 @@ export interface paths {
                     search?: string;
                 };
                 header?: never;
-                path?: never;
+                path: {
+                    /** @description List ID */
+                    listID: string;
+                };
                 cookie?: never;
             };
             requestBody?: never;
