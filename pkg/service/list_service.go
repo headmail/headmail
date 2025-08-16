@@ -89,12 +89,19 @@ func (s *ListService) GetSubscriberCount(ctx context.Context, listID string) (in
 	return s.listRepo.GetSubscriberCount(ctx, listID)
 }
 
-// AddSubscribers add subscribers to a list.
+// AddSubscribers adds subscribers to a list.
+// It sets CreatedAt and UpdatedAt timestamps and performs bulk upsert within a transaction.
 func (s *ListService) AddSubscribers(ctx context.Context, subscribers []*domain.Subscriber) error {
+	if len(subscribers) == 0 {
+		// nothing to do
+		return nil
+	}
+
 	now := time.Now().Unix()
-	for _, s := range subscribers {
-		s.CreatedAt = now
-		s.UpdatedAt = now
+	for _, sub := range subscribers {
+		// ensure timestamps are set for new/updated subscribers
+		sub.CreatedAt = now
+		sub.UpdatedAt = now
 	}
 
 	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {

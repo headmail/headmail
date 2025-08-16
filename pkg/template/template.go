@@ -23,27 +23,30 @@ func (s *Service) Render(templateStr string, data map[string]interface{}) (strin
 	// Add i18n function to the template context
 	funcMap := sprig.TxtFuncMap()
 	funcMap["i18n"] = func(data map[string]interface{}, messageID string) (string, error) {
+		// Determine locale (default to "en")
 		locale, ok := data["locale"].(string)
-		if !ok {
+		if !ok || locale == "" {
 			locale = "en"
 		}
+
 		// Extract i18n data from the main data map
 		i18nData, ok := data["i18n"].(map[string]interface{})
 		if !ok {
-			return "", nil // Or return một error
+			// No i18n data available, return the messageID as fallback
+			return messageID, nil
 		}
 
 		// Extract locale-specific messages
 		localeMessages, ok := i18nData[locale].(map[string]interface{})
 		if !ok {
-			return "", nil // Or return một error
+			// No messages for the locale, fall back to messageID
+			return messageID, nil
 		}
 
 		// Simple key lookup for now. A more robust solution would handle nested keys.
 		message, ok := localeMessages[messageID].(string)
 		if !ok {
-			// Fallback to default locale if specified
-			// This part is simplified. A real implementation would need more logic.
+			// Fallback to messageID if not found
 			return messageID, nil
 		}
 		return message, nil

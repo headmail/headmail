@@ -60,8 +60,8 @@ func NewCampaignService(
 
 // CreateCampaign creates a new campaign.
 func (s *CampaignService) CreateCampaign(ctx context.Context, campaign *domain.Campaign) error {
-	// Generate a new UUID for the campaign
-	campaign.ID = uuid.New().String()
+	// Generate a new UUID for the campaign (use consistent uuid helper)
+	campaign.ID = uuid.NewString()
 	campaign.CreatedAt = time.Now().Unix()
 	campaign.UpdatedAt = campaign.CreatedAt
 	return s.repo.Create(ctx, campaign)
@@ -74,7 +74,8 @@ func (s *CampaignService) GetCampaign(ctx context.Context, id string) (*domain.C
 
 // UpdateCampaign updates an existing campaign.
 func (s *CampaignService) UpdateCampaign(ctx context.Context, campaign *domain.Campaign) error {
-	campaign.UpdatedAt = campaign.CreatedAt
+	// When updating, set UpdatedAt to current time
+	campaign.UpdatedAt = time.Now().Unix()
 	return s.repo.Update(ctx, campaign)
 }
 
