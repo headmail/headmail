@@ -1,0 +1,57 @@
+// Copyright 2025 JC-Lab
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package sqlite
+
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
+)
+
+// JSON implements sql.Scanner and driver.Valuer for JSON data.
+type JSON json.RawMessage
+
+// Scan scan value into Json, implements sql.Scanner interface
+func (j *JSON) Scan(value interface{}) error {
+	var bytes []byte
+	if s, ok := value.(string); ok {
+		bytes = []byte(s)
+	} else {
+		bytes, ok = value.([]byte)
+		if !ok {
+			return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+		}
+	}
+
+	result := json.RawMessage{}
+	err := json.Unmarshal(bytes, &result)
+	*j = JSON(result)
+	return err
+}
+
+// Value return json value, implement driver.Valuer interface
+func (j JSON) Value() (driver.Value, error) {
+	if len(j) == 0 {
+		return nil, nil
+	}
+	return json.RawMessage(j).MarshalJSON()
+}
+
+func (JSON) GormDBDataType(db *gorm.DB, field *schema.Field) string {
+	// use field.Tag, field.TagSettings gets field's tags
+	// checkout https://github.com/go-gorm/gorm/blob/master/schema/field.go for all options
+
+	// returns different database type based on driver name
+	switch db.Dialector.Name() {
+	case "mysql", "sqlite":
+		return "JSON"
+	case "postgres":
+		return "JSONB"
+	}
+	return ""
+}
