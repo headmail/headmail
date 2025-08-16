@@ -66,7 +66,7 @@
       </div>
 
       <div v-if="activeTab === 'send'">
-        <DeliveryForm :campaignId="campaign.id" @saved="onDeliverySaved" @cancel="onDeliveryCancel" />
+        <DeliveryForm :campaignId="campaign.id!!" @saved="onDeliverySaved" @cancel="onDeliveryCancel" />
       </div>
     </div>
 
@@ -93,7 +93,7 @@ const campaign = ref<Campaign>({
   name: '',
   subject: '',
   status: '',
-  template_id: null,
+  template_id: '',
   template_html: '',
   template_text: '',
 });
@@ -142,13 +142,13 @@ const openPicker = () => {
 };
 
 const clearTemplate = () => {
-  campaign.value.template_id = null;
+  campaign.value.template_id = '';
   selectedTemplateName.value = null;
 };
 
 const onTemplateConfirmed = async (templateID: string | null) => {
   pickerVisible.value = false;
-  campaign.value.template_id = templateID;
+  campaign.value.template_id = '';
   campaign.value.subject = '';
   if (templateID) {
     await loadTemplateName(templateID);

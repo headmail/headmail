@@ -1,0 +1,15 @@
+apiVersion: v2
+name: headmail
+description: Headmail application - public web + admin API with optional frontend image
+type: application
+version: 0.0.1
+appVersion: "v0.0.1-rc5"
+keywords:
+  - headmail
+  - email
+home: https://headmail.io
+sources:
+  - https://github.com/headmail/headmail
+maintainers:
+  - name: headmail
+    email: dev@headmail.io

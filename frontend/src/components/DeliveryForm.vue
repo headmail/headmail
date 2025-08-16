@@ -17,7 +17,7 @@
       <ul v-else class="list-disc pl-5 text-sm">
         <li v-for="l in selectedLists" :key="l.id" class="flex items-center gap-2">
           <span>{{ l.name }}</span>
-          <button @click="removeList(l.id)" class="text-xs text-red-600 hover:underline">제거</button>
+          <button @click="removeList(l.id!!)" class="text-xs text-red-600 hover:underline">제거</button>
         </li>
       </ul>
     </div>
@@ -85,7 +85,7 @@
     </div>
 
     <!-- List picker modal -->
-    <ListPickerModal v-model="listPickerOpen" :initialSelected="selectedLists" @confirmed="onListsConfirmed" />
+    <ListPickerModal v-model="listPickerOpen" :initialSelected="selectedLists.map((l) => l.id!!)" @confirmed="onListsConfirmed" />
   </div>
 </template>
 

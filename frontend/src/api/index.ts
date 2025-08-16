@@ -6,7 +6,13 @@
 import createClient from "openapi-fetch";
 import type {paths} from "../generated/api-types";
 
-const {GET, POST, PUT, DELETE} = createClient<paths>({baseUrl: "/api"});
+const {
+    GET,
+    POST,
+    PUT,
+    DELETE,
+    PATCH,
+} = createClient<paths>({baseUrl: "/api"});
 
 // Campaigns
 export const getCampaigns = async (params: paths["/campaigns"]["get"]["parameters"]["query"]) => {
@@ -167,7 +173,7 @@ export const previewTemplate = async (
             "Content-Type": "application/json",
         },
     });
-    return resp.data;
+    return resp.data!!;
 };
 
 // Subscribers of a specific list
@@ -178,7 +184,7 @@ export const getSubscribersOfList = async (listID: string, params?: paths["/list
 
 // Patch subscribers in a list (add/remove)
 export const patchListSubscribers = async (listID: string, req: paths["/lists/{listID}/subscribers"]["patch"]["requestBody"]["content"]["application/json"]) => {
-    const resp = await (createClient<paths>({ baseUrl: "/api" })).PATCH("/lists/{listID}/subscribers", {
+    const resp = await PATCH("/lists/{listID}/subscribers", {
         params: { path: { listID } },
         body: req,
         headers: { "Content-Type": "application/json" },
