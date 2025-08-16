@@ -11,6 +11,7 @@
         <button :class="activeTab === 'detail' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'detail'">상세</button>
         <button :class="activeTab === 'stats' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'stats'">통계</button>
         <button :class="activeTab === 'send' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'send'">전송</button>
+        <button :class="activeTab === 'deliveries' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'deliveries'">전송 상태</button>
       </div>
     </div>
 
@@ -73,6 +74,10 @@
       <div v-if="activeTab === 'send'">
         <DeliveryForm :campaignId="campaign.id!!" @saved="onDeliverySaved" @cancel="onDeliveryCancel" />
       </div>
+
+      <div v-if="activeTab == 'deliveries'">
+        <Deliveries :campaignId="campaign.id!!" />
+      </div>
     </div>
 
     <TemplatePickerModal
@@ -91,6 +96,7 @@ import { getCampaign, updateCampaign, getTemplate } from '../../api';
 import DeliveryForm from '../../components/DeliveryForm.vue';
 import StatsChart from '../../components/StatsChart.vue';
 import TemplatePickerModal from '../../components/TemplatePickerModal.vue';
+import Deliveries from '../../components/Deliveries.vue';
 import type { Campaign } from '../../types';
 
 const route = useRoute();
@@ -104,7 +110,7 @@ const campaign = ref<Campaign>({
   template_text: '',
 });
 const loading = ref(true);
-const activeTab = ref<'detail' | 'send' | 'stats'>('detail');
+const activeTab = ref<'detail' | 'send' | 'stats' | 'deliveries'>('detail');
 
 const pickerVisible = ref(false);
 const selectedTemplateName = ref<string | null>(null);
