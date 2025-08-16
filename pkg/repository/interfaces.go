@@ -71,6 +71,10 @@ type CampaignRepository interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter CampaignFilter, pagination Pagination) ([]*domain.Campaign, int, error)
 	UpdateStatus(ctx context.Context, id string, status domain.CampaignStatus) error
+
+	// IncrementStats atomically increments per-campaign counters.
+	// Provide deltas for fields you want to change; pass 0 for no-op.
+	IncrementStats(ctx context.Context, id string, recipientDelta int, deliveredDelta int, failedDelta int, openDelta int, clickDelta int, bounceDelta int) error
 }
 
 // DeliveryRepository defines the interface for delivery storage.
@@ -88,11 +92,10 @@ type DeliveryRepository interface {
 	UpdateStatus(ctx context.Context, id string, status string) error
 
 	// IncrementCount atomically increments a single counter (open, click, bounce) for a delivery.
+	// Returns a boolean indicating whether this was the first event of that type for the delivery
+	// (e.g., first open or first click). For bounce events the boolean may be ignored.
 	// eventType should be one of domain.EventTypeOpened, domain.EventTypeClicked, domain.EventTypeBounced.
-	// Implementations must perform the increment atomically. For open events, if the OpenedAt
-	// timestamp is currently NULL, implementations should set OpenedAt to the current unix
-	// seconds value when incrementing (i.e. first open should also set OpenedAt).
-	IncrementCount(ctx context.Context, id string, eventType domain.EventType) error
+	IncrementCount(ctx context.Context, id string, eventType domain.EventType) (bool, error)
 }
 
 // TemplateRepository defines the interface for template storage.

@@ -22,6 +22,7 @@ type TrackingServiceProvider interface {
 type TrackingService struct {
 	deliveryRepo repository.DeliveryRepository
 	eventRepo    repository.EventRepository
+	campaignRepo repository.CampaignRepository
 }
 
 // NewTrackingService creates a new TrackingService.
@@ -29,6 +30,7 @@ func NewTrackingService(db repository.DB) *TrackingService {
 	return &TrackingService{
 		deliveryRepo: db.DeliveryRepository(),
 		eventRepo:    db.EventRepository(),
+		campaignRepo: db.CampaignRepository(),
 	}
 }
 
@@ -45,8 +47,23 @@ func (s *TrackingService) LogOpenEvent(ctx context.Context, deliveryID string, u
 	}
 
 	// Atomically increment open count (repository will set OpenedAt on first open)
-	if err := s.deliveryRepo.IncrementCount(ctx, deliveryID, domain.EventTypeOpened); err != nil {
+	isFirst, err := s.deliveryRepo.IncrementCount(ctx, deliveryID, domain.EventTypeOpened)
+	if err != nil {
 		log.Printf("tracking: failed to increment open count for %s: %v", deliveryID, err)
+	}
+
+	// If this is the first open for the delivery, increment campaign-level open counter.
+	if isFirst {
+		if d, err := s.deliveryRepo.GetByID(ctx, deliveryID); err == nil {
+			if d.CampaignID != nil && *d.CampaignID != "" {
+				if err := s.campaignRepo.IncrementStats(ctx, *d.CampaignID, 0, 0, 0, 1, 0, 0); err != nil {
+					log.Printf("tracking: failed to increment campaign open count for campaign %s: %v", *d.CampaignID, err)
+				}
+			}
+		} else {
+			// non-fatal
+			log.Printf("tracking: failed to load delivery %s for campaign increment: %v", deliveryID, err)
+		}
 	}
 
 	// store event synchronously
@@ -66,9 +83,24 @@ func (s *TrackingService) LogClickEvent(ctx context.Context, deliveryID string, 
 		CreatedAt:  now.Unix(),
 	}
 
-	// Atomically increment click count
-	if err := s.deliveryRepo.IncrementCount(ctx, deliveryID, domain.EventTypeClicked); err != nil {
+	// Atomically increment click count and detect if this is the first click for the delivery
+	isFirst, err := s.deliveryRepo.IncrementCount(ctx, deliveryID, domain.EventTypeClicked)
+	if err != nil {
 		log.Printf("tracking: failed to increment click count for %s: %v", deliveryID, err)
+	}
+
+	// If this is the first click for the delivery, increment campaign-level click counter.
+	if isFirst {
+		if d, err := s.deliveryRepo.GetByID(ctx, deliveryID); err == nil {
+			if d.CampaignID != nil && *d.CampaignID != "" {
+				if err := s.campaignRepo.IncrementStats(ctx, *d.CampaignID, 0, 0, 0, 0, 1, 0); err != nil {
+					log.Printf("tracking: failed to increment campaign click count for campaign %s: %v", *d.CampaignID, err)
+				}
+			}
+		} else {
+			// non-fatal
+			log.Printf("tracking: failed to load delivery %s for campaign increment: %v", deliveryID, err)
+		}
 	}
 
 	// record click synchronously

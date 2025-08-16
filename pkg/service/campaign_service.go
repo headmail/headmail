@@ -30,7 +30,7 @@ type CampaignServiceProvider interface {
 
 	// GetCampaignStats returns time-bucketed opens and clicks for given campaign IDs.
 	// granularity: "hour" or "day"
-	GetCampaignStats(ctx context.Context, campaignIDs []string, from time.Time, to time.Time, granularity string) (map[string]interface{}, error)
+	GetCampaignStats(ctx context.Context, campaignIDs []string, from time.Time, to time.Time, granularity string) (*dto.CampaignStatsResponse, error)
 }
 
 // CampaignService provides business logic for campaign management.
@@ -215,6 +215,15 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 			}
 		}
 
+		// Increment campaign recipient count atomically by number of unique deliveries created.
+		// deliveries are deduplicated by email earlier in this function, so len(deliveries)
+		// represents unique recipients for this call.
+		if campaign.ID != "" && len(deliveries) > 0 {
+			if err := s.repo.IncrementStats(txCtx, campaign.ID, len(deliveries), 0, 0, 0, 0, 0); err != nil {
+				return 0, err
+			}
+		}
+
 		return len(deliveries), nil
 	})
 }
@@ -289,7 +298,7 @@ func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campai
 // Returns a map with keys:
 // - "labels": []int64 (bucket start unix timestamps)
 // - "series": []{ "campaign_id": string, "opens": []int64, "clicks": []int64 }
-func (s *CampaignService) GetCampaignStats(ctx context.Context, campaignIDs []string, from time.Time, to time.Time, granularity string) (map[string]interface{}, error) {
+func (s *CampaignService) GetCampaignStats(ctx context.Context, campaignIDs []string, from time.Time, to time.Time, granularity string) (*dto.CampaignStatsResponse, error) {
 	fromTs := from.Unix()
 	toTs := to.Unix()
 
@@ -316,7 +325,7 @@ func (s *CampaignService) GetCampaignStats(ctx context.Context, campaignIDs []st
 	for b := range bucketSet {
 		labels = append(labels, b)
 	}
-	// sort
+	// sort labels ascending
 	for i := 0; i < len(labels); i++ {
 		for j := i + 1; j < len(labels); j++ {
 			if labels[i] > labels[j] {
@@ -325,7 +334,7 @@ func (s *CampaignService) GetCampaignStats(ctx context.Context, campaignIDs []st
 		}
 	}
 
-	series := make([]map[string]interface{}, 0, len(campaignIDs))
+	series := make([]dto.StatsSeries, 0, len(campaignIDs))
 	for _, cid := range campaignIDs {
 		openSeries := make([]int64, len(labels))
 		clickSeries := make([]int64, len(labels))
@@ -347,15 +356,15 @@ func (s *CampaignService) GetCampaignStats(ctx context.Context, campaignIDs []st
 				}
 			}
 		}
-		series = append(series, map[string]interface{}{
-			"campaign_id": cid,
-			"opens":       openSeries,
-			"clicks":      clickSeries,
+		series = append(series, dto.StatsSeries{
+			CampaignID: cid,
+			Opens:      openSeries,
+			Clicks:     clickSeries,
 		})
 	}
 
-	return map[string]interface{}{
-		"labels": labels,
-		"series": series,
+	return &dto.CampaignStatsResponse{
+		Labels: labels,
+		Series: series,
 	}, nil
 }

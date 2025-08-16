@@ -173,6 +173,20 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 		return err
 	}
 
+	if d.CampaignID != nil && *d.CampaignID != "" {
+		if d.Status == domain.DeliveryStatusSent {
+			// delivered: transition to Sent
+			if err := s.db.CampaignRepository().IncrementStats(ctx, *d.CampaignID, 0, 1, 0, 0, 0, 0); err != nil {
+				log.Printf("worker %s: failed to increment campaign delivered count for %s: %v", workerID, *d.CampaignID, err)
+			}
+		} else if d.Status == domain.DeliveryStatusFailed {
+			// failed: transition to Failed
+			if err := s.db.CampaignRepository().IncrementStats(ctx, *d.CampaignID, 0, 0, 1, 0, 0, 0); err != nil {
+				log.Printf("worker %s: failed to increment campaign failed count for %s: %v", workerID, *d.CampaignID, err)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -191,9 +205,20 @@ func (s *DeliveryService) HandleBouncedMail(ctx context.Context, data *receiver.
 	}
 
 	// Atomically increment bounce count (repository will handle race conditions)
-	if err := s.repo.IncrementCount(ctx, data.DeliveryID, domain.EventTypeBounced); err != nil {
+	isFirstBounce, err := s.repo.IncrementCount(ctx, data.DeliveryID, domain.EventTypeBounced)
+	if err != nil {
 		log.Printf("imap receiver: failed to increment bounce count: %v", err)
-		// continue to record event even if increment failed
+	} else if isFirstBounce {
+		// If this is the first bounce for the delivery, increment campaign-level bounce counter
+		if d, derr := s.repo.GetByID(ctx, data.DeliveryID); derr == nil {
+			if d.CampaignID != nil && *d.CampaignID != "" {
+				if cerr := s.db.CampaignRepository().IncrementStats(ctx, *d.CampaignID, 0, 0, 0, 0, 0, 1); cerr != nil {
+					log.Printf("imap receiver: failed to increment campaign bounce count for %s: %v", *d.CampaignID, cerr)
+				}
+			}
+		} else {
+			log.Printf("imap receiver: failed to load delivery %s for campaign bounce increment: %v", data.DeliveryID, derr)
+		}
 	}
 
 	// write synchronously
