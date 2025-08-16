@@ -17,7 +17,10 @@ import (
 
 // CampaignServiceProvider defines the interface for a campaign service.
 type CampaignServiceProvider interface {
-	CreateCampaign(ctx context.Context, campaign *domain.Campaign) error
+	// CreateCampaign creates a campaign. If campaign.ID is empty a new ID will be generated.
+	// If campaign.ID is provided and upsert is true, an existing campaign with the same ID
+	// will be updated; if upsert is false and the ID already exists, an error will be returned.
+	CreateCampaign(ctx context.Context, campaign *domain.Campaign, upsert bool) error
 	GetCampaign(ctx context.Context, id string) (*domain.Campaign, error)
 	UpdateCampaign(ctx context.Context, campaign *domain.Campaign) error
 	DeleteCampaign(ctx context.Context, id string) error
@@ -58,13 +61,41 @@ func NewCampaignService(
 	}
 }
 
-// CreateCampaign creates a new campaign.
-func (s *CampaignService) CreateCampaign(ctx context.Context, campaign *domain.Campaign) error {
-	// Generate a new UUID for the campaign (use consistent uuid helper)
-	campaign.ID = uuid.NewString()
-	campaign.CreatedAt = time.Now().Unix()
-	campaign.UpdatedAt = campaign.CreatedAt
-	return s.repo.Create(ctx, campaign)
+// CreateCampaign creates a new campaign or upserts when requested.
+func (s *CampaignService) CreateCampaign(ctx context.Context, campaign *domain.Campaign, upsert bool) error {
+	// If no ID provided, generate one and create.
+	if campaign.ID == "" {
+		campaign.ID = uuid.NewString()
+		now := time.Now().Unix()
+		campaign.CreatedAt = now
+		campaign.UpdatedAt = now
+		return s.repo.Create(ctx, campaign)
+	}
+
+	// ID provided: check existence
+	existing, err := s.repo.GetByID(ctx, campaign.ID)
+	if err != nil {
+		// If not found, create new
+		if _, ok := err.(*repository.ErrNotFound); ok {
+			now := time.Now().Unix()
+			campaign.CreatedAt = now
+			campaign.UpdatedAt = now
+			return s.repo.Create(ctx, campaign)
+		}
+		// other error
+		return err
+	}
+
+	// existing found
+	if !upsert {
+		// return unique constraint error to indicate conflict
+		return &repository.ErrUniqueConstraintFailed{Cause: nil}
+	}
+
+	// upsert: preserve CreatedAt, set UpdatedAt and update
+	campaign.CreatedAt = existing.CreatedAt
+	campaign.UpdatedAt = time.Now().Unix()
+	return s.repo.Update(ctx, campaign)
 }
 
 // GetCampaign retrieves a campaign by its ID.

@@ -36,6 +36,8 @@ func NewCampaignHandler(service service.CampaignServiceProvider) *CampaignHandle
 // RegisterRoutes registers the campaign routes to the router.
 func (h *CampaignHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/campaigns", h.createCampaign)
+	// Allow creating a campaign with a pre-defined ID. Accepts optional ?upsert=true to update existing.
+	r.Post("/campaigns/{campaignID}", h.createCampaignWithID)
 	r.Get("/campaigns", h.listCampaigns)
 	r.Get("/campaigns/{campaignID}", h.getCampaign)
 	r.Put("/campaigns/{campaignID}", h.updateCampaign)
@@ -80,11 +82,85 @@ func (h *CampaignHandler) createCampaign(w http.ResponseWriter, r *http.Request)
 		campaign.Status = domain.CampaignStatusDraft
 	}
 
-	if err := h.service.CreateCampaign(r.Context(), campaign); err != nil {
+	// Create normally (no upsert)
+	if err := h.service.CreateCampaign(r.Context(), campaign, false); err != nil {
+		// map unique constraint to 409
+		if _, ok := err.(*repository.ErrUniqueConstraintFailed); ok {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	writeJson(w, http.StatusCreated, campaign)
+}
+
+// createCampaignWithID handles POST /campaigns/{campaignID}?upsert=bool
+// @Summary Create or upsert a campaign with given ID
+// @Description Create a campaign specifying the ID in the path. Use ?upsert=true to update an existing campaign with the same ID.
+// @Tags campaigns
+// @Accept  json
+// @Produce  json
+// @Param   campaignID  path  string  true  "Campaign ID"
+// @Param   upsert  query  bool  false  "Upsert if exists"
+// @Param   campaign  body  dto.CreateCampaignRequest  true  "Campaign to create"
+// @Success 201 {object} domain.Campaign
+// @Failure 409 {object} map[string]string "Conflict - ID already exists"
+// @Failure 400 {object} map[string]string "Bad request"
+// @Router /campaigns/{campaignID} [post]
+func (h *CampaignHandler) createCampaignWithID(w http.ResponseWriter, r *http.Request) {
+	campaignID := chi.URLParam(r, "campaignID")
+	if campaignID == "" {
+		http.Error(w, "missing campaignID path param", http.StatusBadRequest)
+		return
+	}
+
+	upsert := false
+	if upStr := r.URL.Query().Get("upsert"); upStr != "" {
+		if b, err := strconv.ParseBool(upStr); err == nil {
+			upsert = b
+		}
+	}
+
+	var req dto.CreateCampaignRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	campaign := &domain.Campaign{
+		ID:           campaignID,
+		Name:         req.Name,
+		Status:       req.Status,
+		FromName:     req.FromName,
+		FromEmail:    req.FromEmail,
+		Subject:      req.Subject,
+		TemplateID:   req.TemplateID,
+		TemplateHTML: req.TemplateHTML,
+		TemplateText: req.TemplateText,
+		Data:         req.Data,
+		Tags:         req.Tags,
+		Headers:      req.Headers,
+		UTMParams:    req.UTMParams,
+		ScheduledAt:  req.ScheduledAt,
+	}
+	if campaign.Status == "" {
+		campaign.Status = domain.CampaignStatusDraft
+	}
+
+	if err := h.service.CreateCampaign(r.Context(), campaign, upsert); err != nil {
+		if _, ok := err.(*repository.ErrUniqueConstraintFailed); ok {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 201 Created for new resource, 200 OK if upserted existing (we can't easily tell without extra repo info).
+	// For simplicity, return 201 when created; if upsert=true it's semantically acceptable to return 200,
+	// but here we'll return 201 regardless.
 	writeJson(w, http.StatusCreated, campaign)
 }
 

@@ -30,10 +30,24 @@ import (
 // @license.url  https://opensource.org/license/agpl-v3
 
 // @BasePath /api
+
+// version can be set at build time via -ldflags "-X main.version=..."
+// default is "dev"
+var version = "dev"
+
+// main entrypoint
 func main() {
 	var configPath string
+	var showVersion bool
 	flag.StringVar(&configPath, "config", "", "Path to the configuration file")
+	flag.BoolVar(&showVersion, "version", false, "Print build version and exit")
 	flag.Parse()
+
+	if showVersion {
+		// print the build version and exit
+		_, _ = os.Stdout.WriteString(version + "\n")
+		return
+	}
 
 	var opts []config.Option
 	if configPath != "" {
