@@ -90,7 +90,7 @@ spec:
             httpGet:
               path: /api/healthz
               port: admin
-            initialDelaySeconds: {{ .Values.backend.livenessProbe.initialDelaySeconds | default 10 }}
+            initialDelaySeconds: {{ .Values.backend.livenessProbe.initialDelaySeconds | default 1 }}
             periodSeconds: {{ .Values.backend.livenessProbe.periodSeconds | default 10 }}
           {{- end }}
           {{- if .Values.backend.readinessProbe.enabled }}
@@ -98,8 +98,8 @@ spec:
             httpGet:
               path: /api/healthz
               port: admin
-            initialDelaySeconds: {{ .Values.backend.readinessProbe.initialDelaySeconds | default 3 }}
-            periodSeconds: {{ .Values.backend.readinessProbe.periodSeconds | default 5 }}
+            initialDelaySeconds: {{ .Values.backend.readinessProbe.initialDelaySeconds | default 1 }}
+            periodSeconds: {{ .Values.backend.readinessProbe.periodSeconds | default 30 }}
           {{- end }}
           volumeMounts:
             - name: config
