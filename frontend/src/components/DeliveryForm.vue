@@ -1,3 +1,8 @@
+<!--
+ Copyright 2025 JC-Lab
+ SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <template>
   <div class="space-y-4 bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-lg font-semibold">전송</h2>

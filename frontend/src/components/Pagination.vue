@@ -1,3 +1,8 @@
+<!--
+ Copyright 2025 JC-Lab
+ SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <template>
   <div class="flex items-center justify-between mt-4">
     <div class="text-sm text-gray-700">

@@ -1,3 +1,6 @@
+// Copyright 2025 JC-Lab
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 package dto
 
 // CreateListRequest is the request for creating a list.

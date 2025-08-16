@@ -1,3 +1,8 @@
+/**
+ * Copyright 2025 JC-Lab
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
 // Re-export types from generated API types for convenience
 import type { definitions } from './generated/api-types';
 

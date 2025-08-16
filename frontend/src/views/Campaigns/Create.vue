@@ -1,3 +1,8 @@
+<!--
+ Copyright 2025 JC-Lab
+ SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <template>
   <div class="max-w-4xl mx-auto p-6">
     <h1 class="text-2xl font-semibold mb-4">새 캠페인 생성</h1>

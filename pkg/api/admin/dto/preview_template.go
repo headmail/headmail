@@ -1,3 +1,6 @@
+// Copyright 2025 JC-Lab
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // Package dto contains request/response DTOs for admin APIs.
 package dto
 

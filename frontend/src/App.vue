@@ -1,3 +1,8 @@
+<!--
+ Copyright 2025 JC-Lab
+ SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <script setup lang="ts">
 // No script needed here for now, as content is handled by router-view
 </script>

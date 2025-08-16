@@ -1,3 +1,8 @@
+<!--
+ Copyright 2025 JC-Lab
+ SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 <template>
   <div v-if="visible" class="fixed inset-0 z-50 flex items-center justify-center">
     <div class="absolute inset-0 bg-black/50" @click="close"></div>
