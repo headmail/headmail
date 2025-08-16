@@ -357,6 +357,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/campaigns/{campaignID}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get campaign statistics (single)
+         * @description Returns time-bucketed opens and clicks for the specified campaign ID.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description From unix timestamp */
+                    from?: number;
+                    /** @description To unix timestamp */
+                    to?: number;
+                    /** @description hour|day */
+                    granularity?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description Campaign ID */
+                    campaignID: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CampaignStatsResponse"];
+                    };
+                };
+                /** @description Bad request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: string;
+                        };
+                    };
+                };
+                /** @description Internal error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/campaigns/{campaignID}/status": {
         parameters: {
             query?: never;
@@ -400,6 +471,47 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/healthz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health check
+         * @description Returns basic health information (status, time, uptime)
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/lists": {
@@ -715,6 +827,46 @@ export interface paths {
                 };
             };
         };
+        trace?: never;
+    };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Metrics
+         * @description Exposes Prometheus metrics
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Prometheus metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                        "text/plain": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/r/{deliveryID}/c": {
@@ -1486,6 +1638,10 @@ export interface components {
             /** @description Unix timestamp seconds */
             updated_at?: number;
         };
+        "github_com_headmail_headmail_pkg_api_admin_dto.CampaignStatsResponse": {
+            labels?: number[];
+            series?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.StatsSeries"][];
+        };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest": {
             data?: {
                 [key: string]: unknown;
@@ -1581,6 +1737,11 @@ export interface components {
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.ReplaceSubscribersRequest": {
             subscribers?: string[];
+        };
+        "github_com_headmail_headmail_pkg_api_admin_dto.StatsSeries": {
+            campaign_id?: string;
+            clicks?: number[];
+            opens?: number[];
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest": {
             data?: {

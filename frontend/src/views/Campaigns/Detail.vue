@@ -9,6 +9,7 @@
       <h1 class="text-2xl font-bold">캠페인 상세</h1>
       <div class="flex items-center gap-2">
         <button :class="activeTab === 'detail' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'detail'">상세</button>
+        <button :class="activeTab === 'stats' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'stats'">통계</button>
         <button :class="activeTab === 'send' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'send'">전송</button>
       </div>
     </div>
@@ -65,6 +66,10 @@
         </div>
       </div>
 
+      <div v-if="activeTab === 'stats'">
+        <StatsChart :campaignId="campaign.id!!" />
+      </div>
+
       <div v-if="activeTab === 'send'">
         <DeliveryForm :campaignId="campaign.id!!" @saved="onDeliverySaved" @cancel="onDeliveryCancel" />
       </div>
@@ -84,6 +89,7 @@ import {ref, onMounted, computed} from 'vue';
 import { useRoute } from 'vue-router';
 import { getCampaign, updateCampaign, getTemplate } from '../../api';
 import DeliveryForm from '../../components/DeliveryForm.vue';
+import StatsChart from '../../components/StatsChart.vue';
 import TemplatePickerModal from '../../components/TemplatePickerModal.vue';
 import type { Campaign } from '../../types';
 
@@ -98,7 +104,7 @@ const campaign = ref<Campaign>({
   template_text: '',
 });
 const loading = ref(true);
-const activeTab = ref<'detail' | 'send'>('detail');
+const activeTab = ref<'detail' | 'send' | 'stats'>('detail');
 
 const pickerVisible = ref(false);
 const selectedTemplateName = ref<string | null>(null);

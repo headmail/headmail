@@ -69,17 +69,21 @@
 
         <!-- Campaign Stats -->
         <div class="p-6 bg-gray-50">
-          <div class="grid grid-cols-3 gap-4 mb-4">
+          <div class="grid grid-cols-4 gap-4 mb-4">
             <div class="text-center">
-              <div class="text-lg font-semibold text-gray-900">0</div>
+              <div class="text-lg font-semibold text-gray-900">{{ campaign.recipient_count }}</div>
+              <div class="text-xs text-gray-500">수신자</div>
+            </div>
+            <div class="text-center">
+              <div class="text-lg font-semibold text-gray-900">{{ campaign.delivered_count }}</div>
               <div class="text-xs text-gray-500">발송</div>
             </div>
             <div class="text-center">
-              <div class="text-lg font-semibold text-green-600">0%</div>
+              <div class="text-lg font-semibold text-green-600">{{ openRate(campaign) }}%</div>
               <div class="text-xs text-gray-500">열람률</div>
             </div>
             <div class="text-center">
-              <div class="text-lg font-semibold text-blue-600">0%</div>
+              <div class="text-lg font-semibold text-blue-600">{{ clickRate(campaign) }}%</div>
               <div class="text-xs text-gray-500">클릭률</div>
             </div>
           </div>
@@ -240,6 +244,20 @@ const getStatusText = (status: string | undefined) => {
     default:
       return status || '알 수 없음';
   }
+};
+
+const openRate = (c: Campaign | null | undefined) => {
+  if (!c) return 0;
+  const denom = (c.delivered_count ?? c.recipient_count ?? 0);
+  if (!denom) return 0;
+  return Math.round(((c.open_count ?? 0) / denom) * 100);
+};
+
+const clickRate = (c: Campaign | null | undefined) => {
+  if (!c) return 0;
+  const denom = (c.delivered_count ?? c.recipient_count ?? 0);
+  if (!denom) return 0;
+  return Math.round(((c.click_count ?? 0) / denom) * 100);
 };
 
 onMounted(fetchCampaigns);

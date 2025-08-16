@@ -23,6 +23,20 @@ export const getCampaign = async (campaignID: string) => {
     const resp = await GET("/campaigns/{campaignID}", {params: {path: {campaignID}}});
     return resp.data;
 };
+
+// Get stats for a single campaign
+export const getCampaignStats = async (
+    campaignID: string,
+    params?: paths["/campaigns/{campaignID}/stats"]["get"]["parameters"]["query"]
+) => {
+    const resp = await GET("/campaigns/{campaignID}/stats", {
+        params: {
+            path: { campaignID },
+            query: params,
+        },
+    });
+    return resp.data;
+};
 export const createCampaign = async (req: paths["/campaigns"]["post"]["requestBody"]["content"]["application/json"]) => {
     const resp = await POST("/campaigns", {
         body: req,

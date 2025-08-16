@@ -6,6 +6,7 @@ package sqlite
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
@@ -187,4 +188,47 @@ func (r *campaignRepository) List(ctx context.Context, filter repository.Campaig
 func (r *campaignRepository) UpdateStatus(ctx context.Context, id string, status domain.CampaignStatus) error {
 	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Model(&Campaign{}).Where("id = ?", id).Update("status", status).Error
+}
+
+// IncrementStats atomically increments per-campaign counters.
+// Provide deltas for fields you want to change; pass 0 for no-op.
+func (r *campaignRepository) IncrementStats(ctx context.Context, id string, recipientDelta int, deliveredDelta int, failedDelta int, openDelta int, clickDelta int, bounceDelta int) error {
+	db := extractTx(ctx, r.db.DB)
+
+	sets := make([]string, 0)
+	args := make([]interface{}, 0)
+
+	if recipientDelta != 0 {
+		sets = append(sets, "recipient_count = recipient_count + ?")
+		args = append(args, recipientDelta)
+	}
+	if deliveredDelta != 0 {
+		sets = append(sets, "delivered_count = delivered_count + ?")
+		args = append(args, deliveredDelta)
+	}
+	if failedDelta != 0 {
+		sets = append(sets, "failed_count = failed_count + ?")
+		args = append(args, failedDelta)
+	}
+	if openDelta != 0 {
+		sets = append(sets, "open_count = open_count + ?")
+		args = append(args, openDelta)
+	}
+	if clickDelta != 0 {
+		sets = append(sets, "click_count = click_count + ?")
+		args = append(args, clickDelta)
+	}
+	if bounceDelta != 0 {
+		sets = append(sets, "bounce_count = bounce_count + ?")
+		args = append(args, bounceDelta)
+	}
+
+	if len(sets) == 0 {
+		return nil
+	}
+
+	query := "UPDATE campaigns SET " + strings.Join(sets, ", ") + " WHERE id = ?"
+	args = append(args, id)
+
+	return db.WithContext(ctx).Exec(query, args...).Error
 }
