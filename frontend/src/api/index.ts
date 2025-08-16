@@ -63,7 +63,6 @@ export const deleteCampaign = async (campaignID: string) => {
     return resp.data;
 };
 
-// Create deliveries for a campaign
 export const createCampaignDeliveries = async (
     campaignID: string,
     req: paths["/campaigns/{campaignID}/deliveries"]["post"]["requestBody"]["content"]["application/json"]
@@ -73,6 +72,20 @@ export const createCampaignDeliveries = async (
         body: req,
         headers: {
             "Content-Type": "application/json",
+        },
+    });
+    return resp.data;
+};
+
+// Get deliveries for a campaign
+export const getCampaignDeliveries = async (
+    campaignID: string,
+    params?: paths["/campaigns/{campaignID}/deliveries"]["get"]["parameters"]["query"]
+) => {
+    const resp = await GET("/campaigns/{campaignID}/deliveries", {
+        params: {
+            path: { campaignID },
+            query: params,
         },
     });
     return resp.data;
