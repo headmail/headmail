@@ -14,6 +14,9 @@ metadata:
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  {{- if or .Values.ingress.public.ingressClassName .Values.ingress.ingressClassName }}
+  ingressClassName: {{ default .Values.ingress.ingressClassName .Values.ingress.public.ingressClassName | quote }}
+  {{- end }}
   {{- if .Values.ingress.public.tls }}
   tls:
   {{- range .Values.ingress.public.tls }}
@@ -53,6 +56,9 @@ metadata:
     {{ toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  {{- if or .Values.ingress.admin.ingressClassName .Values.ingress.ingressClassName }}
+  ingressClassName: {{ default .Values.ingress.ingressClassName .Values.ingress.admin.ingressClassName | quote }}
+  {{- end }}
   {{- if .Values.ingress.admin.tls }}
   tls:
   {{- range .Values.ingress.admin.tls }}

@@ -62,17 +62,20 @@ persistence:
 
 ingress:
   enabled: true
+  ingressClassName: ""
   annotations: {}
   tls: []
   # public ingress (routes to backend public web on port 8080)
   public:
     enabled: true
+    ingressClassName: ""
     host: "headmail.example.com"
     annotations: {}
     tls: []
   # admin ingress (separate host; routes '/' -> frontend, '/api' -> backend admin)
   admin:
     enabled: true
+    ingressClassName: ""
     host: "admin.headmail.example.com"
     annotations: {}
     tls: []
@@ -131,4 +134,4 @@ secretEnv:
   secretName: "" # e.g. "headmail-secret"
   env:
     HEADMAIL_SMTP_PASSWORD: smtp_password
-    HEADMAIL_IMAP_PASSWORD: image_password
+    HEADMAIL_IMAP_PASSWORD: imap_password
