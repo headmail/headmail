@@ -1,0 +1,134 @@
+# Default values for headmail chart.
+
+replicaCount: 1
+
+image:
+  registry: "ghcr.io"
+  pullPolicy: IfNotPresent
+
+# Backend service (headmail binary)
+backend:
+  replicaCount: 1
+  image:
+    registry: ""
+    repository: headmail/headmail
+    tag: ""
+    pullPolicy: IfNotPresent
+  containerPorts:
+    publicPort: 8080
+    adminPort: 8081
+  resources: {}
+  env: {}
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 30
+  service:
+    type: ClusterIP
+    ports:
+      publicPort: 8080
+      adminPort: 8081
+
+# Frontend deployment that serves admin web at '/'
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    registry: ""
+    repository: headmail/headmail-frontend
+    tag: ""
+    pullPolicy: IfNotPresent
+  containerPorts:
+    web: 3000
+  resources: {}
+  env: {}
+  livenessProbe:
+    enabled: true
+    periodSeconds: 10
+  service:
+    type: ClusterIP
+    ports:
+      web: 3000
+
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  storageClass: ""
+
+ingress:
+  enabled: true
+  annotations: {}
+  tls: []
+  # public ingress (routes to backend public web on port 8080)
+  public:
+    enabled: true
+    host: "headmail.example.com"
+    annotations: {}
+    tls: []
+  # admin ingress (separate host; routes '/' -> frontend, '/api' -> backend admin)
+  admin:
+    enabled: true
+    host: "admin.headmail.example.com"
+    annotations: {}
+    tls: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod security / image pull secrets
+imagePullSecrets: []
+
+serviceAccount:
+  create: false
+  name: ''
+  automountServiceAccountToken: true
+  annotations: {}
+
+# RBAC toggle (if you want service accounts/roles)
+rbac:
+  create: false
+
+# application config will be stored in a ConfigMap and mounted into the backend at /app/config/config.yaml
+# Modify values.config to change runtime configuration; the ConfigMap checksum is annotated on deployments to trigger rollouts.
+config:
+  server:
+    public:
+      url: "" # default value use .Values.ingress.public.host
+    
+  smtp:
+    host: "mail.example.com"
+    port: 587
+    username: "no-reply@example.com"
+    from:
+      name: "no reply"
+      email: "no-reply@example.com"
+    send:
+      batch_size: 100
+      throttle: 50
+      attempts: 5
+
+  imap:
+    host: "mail.example.com"
+    port: 143
+    username: "no-reply@example.com"
+
+  database:
+    type: "sqlite"
+    url: "file:/app/data/data.db?cache=shared&mode=rwc"
+
+# Secret-based environment variables.
+# Set secretEnv.create=true to create a Kubernetes Secret from values.secretEnv.data,
+# or set secretEnv.secretName to reference an existing secret.
+# The deployment will map the specified keys to env vars using secretKeyRef.
+secretEnv:
+  create: true
+  secretName: "" # e.g. "headmail-secret"
+  env:
+    HEADMAIL_SMTP_PASSWORD: smtp_password
+    HEADMAIL_IMAP_PASSWORD: image_password
