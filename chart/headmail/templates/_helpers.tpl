@@ -8,7 +8,7 @@
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
 {{- $name := include "headmail.name" . -}}
-{{- if hasPrefix $name .Release.Name }}
+{{- if hasSuffix $name .Release.Name }}
 {{- printf "%s" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- else }}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}

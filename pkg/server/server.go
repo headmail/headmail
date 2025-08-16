@@ -19,6 +19,7 @@ import (
 	"github.com/headmail/headmail/pkg/mailer"
 	"github.com/headmail/headmail/pkg/receiver"
 	"github.com/headmail/headmail/pkg/template"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -46,6 +47,9 @@ type Server struct {
 	publicRouter *chi.Mux
 	adminServer  *http.Server
 	publicServer *http.Server
+
+	startTime time.Time
+	promReg   *prometheus.Registry
 
 	// Services
 	listService     service.ListServiceProvider
@@ -130,6 +134,9 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 
 	srv.trackingService = service.NewTrackingService(srv.db)
 
+	srv.startTime = time.Now()
+	srv.promReg = NewPrometheusRegistry()
+
 	// Register routes
 	srv.registerMiddlewares()
 	srv.registerAdminRoutes()
@@ -153,6 +160,10 @@ func (s *Server) registerAdminRoutes() {
 	templateHandler := admin.NewTemplateHandler(s.templateService)
 
 	s.adminRouter.Route("/api", func(r chi.Router) {
+		// register monitoring (health + prometheus metrics) using helper functions
+		RegisterMetricsHandler(r, s.promReg)
+		RegisterHealthHandler(r, s.startTime)
+
 		listHandler.RegisterRoutes(r)
 		campaignHandler.RegisterRoutes(r)
 		deliveryHandler.RegisterRoutes(r)
