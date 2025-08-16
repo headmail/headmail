@@ -76,11 +76,11 @@ type DatabaseConfig struct {
 }
 
 // Option defines a function that configures a koanf instance.
-type Option func(k *koanf.Koanf)
+type Option func(k *koanf.Koanf) error
 
 // WithFile creates an option that loads configuration from a file.
 func WithFile(path string) Option {
-	return func(k *koanf.Koanf) {
+	return func(k *koanf.Koanf) error {
 		var parser koanf.Parser
 		if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
 			parser = yaml.Parser()
@@ -90,12 +90,32 @@ func WithFile(path string) Option {
 			parser = toml.Parser()
 		} else {
 			log.Printf("Warning: unsupported config file format for %s", path)
-			return
+			return nil
 		}
 
 		if err := k.Load(file.Provider(path), parser); err != nil {
 			log.Printf("Warning: could not load config file %s: %v", path, err)
+			return err
 		}
+
+		return nil
+	}
+}
+
+func WithEnv(prefix string) Option {
+	return func(k *koanf.Koanf) error {
+		// Load environment variables
+		if err := k.Load(env.Provider(prefix, ".", func(s string) string {
+			envKey := strings.TrimPrefix(s, prefix)
+			mapped, ok := envMappings[envKey]
+			if ok {
+				return mapped
+			}
+			return strings.Replace(strings.ToLower(envKey), "_", ".", -1)
+		}), nil); err != nil {
+			return err
+		}
+		return nil
 	}
 }
 
@@ -115,19 +135,9 @@ func Load(opts ...Option) (*Config, error) {
 
 	// Apply all options
 	for _, opt := range opts {
-		opt(k)
-	}
-
-	// Load environment variables
-	if err := k.Load(env.Provider("HEADMAIL_", ".", func(s string) string {
-		envKey := strings.TrimPrefix(s, "HEADMAIL_")
-		mapped, ok := envMappings[envKey]
-		if ok {
-			return mapped
+		if err := opt(k); err != nil {
+			return nil, err
 		}
-		return strings.Replace(strings.ToLower(envKey), "_", ".", -1)
-	}), nil); err != nil {
-		return nil, err
 	}
 
 	var cfg Config

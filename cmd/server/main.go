@@ -53,6 +53,7 @@ func main() {
 	if configPath != "" {
 		opts = append(opts, config.WithFile(configPath))
 	}
+	opts = append(opts, config.WithEnv("HEADMAIL_"))
 
 	cfg, err := config.Load(opts...)
 	if err != nil {
