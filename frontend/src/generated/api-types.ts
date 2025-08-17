@@ -1628,6 +1628,7 @@ export interface components {
             total?: number;
         };
         "api_admin.UpdateCampaignStatusRequest": {
+            scheduled_at?: number;
             status?: string;
         };
         "domain.Campaign": {
@@ -1722,7 +1723,6 @@ export interface components {
             opened_at?: number;
             /** @description Scheduled time */
             scheduled_at?: number;
-            send_scheduled_at?: number;
             /** @description Time of sending */
             sent_at?: number;
             status?: components["schemas"]["domain.DeliveryStatus"];
@@ -1830,12 +1830,9 @@ export interface components {
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest": {
             individuals?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.Individual"][];
             lists?: string[];
-            /** @description ScheduledAt seconds */
-            scheduled_at?: number;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse": {
             deliveries_created?: number;
-            scheduled_at?: number;
             status?: string;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateListRequest": {
@@ -1865,12 +1862,17 @@ export interface components {
                 [key: string]: unknown;
             };
             email?: string;
+            from_email?: string;
+            from_name?: string;
             headers?: {
                 [key: string]: string;
             };
             name?: string;
             subject?: string;
             tags?: string[];
+            template_html?: string;
+            template_id?: string;
+            template_text?: string;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.Individual": {
             data?: {

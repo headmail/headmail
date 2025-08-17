@@ -136,7 +136,26 @@ func (r *campaignRepository) Update(ctx context.Context, campaign *domain.Campai
 		return err
 	}
 	db := extractTx(ctx, r.db.DB)
-	return db.WithContext(ctx).Save(entity).Error
+
+	// Only update the allowed fields to avoid overwriting other columns.
+	updates := map[string]interface{}{
+		"name":          entity.Name,
+		"status":        entity.Status,
+		"from_name":     entity.FromName,
+		"from_email":    entity.FromEmail,
+		"subject":       entity.Subject,
+		"template_id":   entity.TemplateID,
+		"template_html": entity.TemplateHTML,
+		"template_text": entity.TemplateText,
+		"data":          entity.Data,
+		"tags":          entity.Tags,
+		"headers":       entity.Headers,
+		"utm_params":    entity.UTMParams,
+		"scheduled_at":  entity.ScheduledAt,
+		"updated_at":    entity.UpdatedAt,
+	}
+
+	return db.WithContext(ctx).Model(&Campaign{}).Where("id = ?", entity.ID).Updates(updates).Error
 }
 
 func (r *campaignRepository) Delete(ctx context.Context, id string) error {
@@ -169,7 +188,7 @@ func (r *campaignRepository) List(ctx context.Context, filter repository.Campaig
 	}
 
 	offset := (pagination.Page - 1) * pagination.Limit
-	if err := query.Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -231,4 +250,27 @@ func (r *campaignRepository) IncrementStats(ctx context.Context, id string, reci
 	args = append(args, id)
 
 	return db.WithContext(ctx).Exec(query, args...).Error
+}
+
+// ListScheduledBefore returns campaigns whose scheduled_at is non-null and <= ts.
+func (r *campaignRepository) ListScheduledBefore(ctx context.Context, ts int64) ([]*domain.Campaign, error) {
+	var entities []Campaign
+	db := extractTx(ctx, r.db.DB)
+	query := db.WithContext(ctx).Model(&Campaign{}).
+		Where("status = ? AND (scheduled_at <= ? OR scheduled_at IS NULL)", domain.CampaignStatusScheduled, ts)
+
+	if err := query.Find(&entities).Error; err != nil {
+		return nil, err
+	}
+
+	var campaigns []*domain.Campaign
+	for _, e := range entities {
+		c, err := entityToCampaignDomain(&e)
+		if err != nil {
+			return nil, err
+		}
+		campaigns = append(campaigns, c)
+	}
+
+	return campaigns, nil
 }

@@ -56,8 +56,19 @@
               <div class="text-gray-900 font-medium">{{ campaign.id }}</div>
             </div>
             <div>
-              <div class="text-sm text-gray-500">상태</div>
-              <div class="text-gray-900 font-medium">{{ campaign.status }}</div>
+              <label class="block text-sm text-gray-500">상태</label>
+              <select v-model="campaign.status" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                <option value="">(선택)</option>
+                <option value="draft">draft</option>
+                <option value="scheduled">scheduled</option>
+                <option value="sending">sending</option>
+                <option value="sent">sent</option>
+                <option value="paused">paused</option>
+                <option value="cancelled">cancelled</option>
+              </select>
+
+              <label class="block text-sm text-gray-500 mt-3">스케줄</label>
+              <input v-model="scheduledAtLocal" type="datetime-local" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" />
             </div>
           </div>
 
@@ -116,6 +127,32 @@ const activeTab = ref<'detail' | 'send' | 'stats' | 'deliveries'>((route.query.t
 const pickerVisible = ref(false);
 const selectedTemplateName = ref<string | null>(null);
 
+// scheduledAtLocal: bound to <input type="datetime-local">
+// stored as string like "2025-08-17T13:00"
+const scheduledAtLocal = ref<string | null>(null);
+
+// helper: convert datetime-local string to unix seconds (optional)
+const toUnixSeconds = (s: string | null) => {
+  if (!s) return null;
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return null;
+  return Math.floor(d.getTime() / 1000);
+};
+
+// helper: convert unix seconds to datetime-local string in local timezone
+const fromUnixSeconds = (ts: number | null | undefined) => {
+  if (!ts) return null;
+  const d = new Date(ts * 1000);
+  // produce yyyy-MM-ddTHH:mm
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  const mm = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+};
+
 const subjectPlaceholder = computed(() => {
   if (!campaign.value.template_id) {
     return '';
@@ -135,6 +172,7 @@ const fetchCampaign = async () => {
       template_html: (resp as any).template_html || (resp as any).templateHTML || '',
       template_text: (resp as any).template_text || (resp as any).templateText || '',
     };
+    scheduledAtLocal.value = fromUnixSeconds(resp?.scheduled_at || null);
     if (campaign.value.template_id) {
       await loadTemplateName(campaign.value.template_id);
     } else {
@@ -191,7 +229,9 @@ const handleSave = async () => {
       template_id: campaign.value.template_id,
       template_html: campaign.value.template_html,
       template_text: campaign.value.template_text,
-    } as any);
+      status: campaign.value.status,
+      scheduled_at: toUnixSeconds(scheduledAtLocal.value || null) || undefined,
+    });
     alert('저장되었습니다.');
     await fetchCampaign();
   } catch (err) {

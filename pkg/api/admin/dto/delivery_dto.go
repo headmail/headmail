@@ -32,12 +32,9 @@ type Individual struct {
 type CreateDeliveriesRequest struct {
 	Lists       []string     `json:"lists"`
 	Individuals []Individual `json:"individuals"`
-	// ScheduledAt seconds
-	ScheduledAt *int64 `json:"scheduled_at"`
 }
 
 type CreateDeliveriesResponse struct {
 	Status            domain.CampaignStatus `json:"status"`
-	ScheduledAt       *int64                `json:"scheduled_at"`
 	DeliveriesCreated int                   `json:"deliveries_created"`
 }

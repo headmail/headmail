@@ -217,6 +217,9 @@ const getStatusBadgeClass = (status: string | undefined) => {
     case 'draft':
     case '초안':
       return 'bg-gray-100 text-gray-800';
+    case 'scheduled':
+    case '예약됨':
+      return 'bg-blue-100 text-blue-800';
     case 'sending':
     case '발송중':
       return 'bg-blue-100 text-blue-800';
@@ -235,6 +238,8 @@ const getStatusText = (status: string | undefined) => {
   switch (status?.toLowerCase()) {
     case 'draft':
       return '초안';
+    case 'scheduled':
+      return '예약됨';
     case 'sending':
       return '발송중';
     case 'sent':

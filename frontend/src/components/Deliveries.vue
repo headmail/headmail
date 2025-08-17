@@ -32,14 +32,14 @@
                 <div class="flex items-center gap-2">
                   <button
                     class="px-3 py-1 text-sm rounded bg-blue-50 text-blue-600 hover:bg-blue-100 disabled:opacity-50"
-                    :disabled="isRowLoading(d.id) || d.status === 'sent' || d.status === 'sending'"
+                    :disabled="isRowLoading(d.id) || !(d.status === 'idle' || d.status === 'scheduled')"
                     @click="onSendNow(d.id)"
                   >
                     지금 전송
                   </button>
                   <button
                     class="px-3 py-1 text-sm rounded bg-yellow-50 text-yellow-700 hover:bg-yellow-100 disabled:opacity-50"
-                    :disabled="isRowLoading(d.id) || !(d.status === 'failed')"
+                    :disabled="isRowLoading(d.id) || (d.status === 'idle' || d.status === 'scheduled')"
                     @click="onRetry(d.id)"
                   >
                     재전송

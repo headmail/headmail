@@ -150,15 +150,17 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 	}
 
 	delivery := &domain.Delivery{
-		Type:     domain.DeliveryTypeTransaction,
-		Name:     req.Name,
-		Email:    req.Email,
-		Subject:  subject,
-		BodyHTML: bodyHTML,
-		BodyText: bodyText,
-		Data:     req.Data,
-		Headers:  req.Headers,
-		Tags:     req.Tags,
+		Type:        domain.DeliveryTypeTransaction,
+		Status:      domain.DeliveryStatusScheduled,
+		ScheduledAt: nil,
+		Name:        req.Name,
+		Email:       req.Email,
+		Subject:     subject,
+		BodyHTML:    bodyHTML,
+		BodyText:    bodyText,
+		Data:        req.Data,
+		Headers:     req.Headers,
+		Tags:        req.Tags,
 	}
 
 	// Keep template id reference in data for auditing/rendering if provided

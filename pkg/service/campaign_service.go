@@ -26,6 +26,8 @@ type CampaignServiceProvider interface {
 	DeleteCampaign(ctx context.Context, id string) error
 	ListCampaigns(ctx context.Context, filter repository.CampaignFilter, pagination repository.Pagination) ([]*domain.Campaign, int, error)
 	UpdateCampaignStatus(ctx context.Context, id string, status domain.CampaignStatus) error
+	// ReleaseDueDeliveries sets SendScheduledAt for deliveries whose campaign scheduled time has arrived.
+	ReleaseDueDeliveries(ctx context.Context, now int64) (int, error)
 	CreateDeliveries(ctx context.Context, campaignID string, req *dto.CreateDeliveriesRequest) (int, error)
 
 	// GetCampaignStats returns time-bucketed opens and clicks for given campaign IDs.
@@ -174,7 +176,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 					continue
 				}
 
-				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, individual.Name, individual.Email, req.ScheduledAt, individual.Data, individual.Headers)
+				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, individual.Name, individual.Email, individual.Data, individual.Headers)
 				if err != nil {
 					return 0, err // Or handle error more gracefully
 				}
@@ -200,7 +202,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 				if processedEmails[subscriber.Email] {
 					continue
 				}
-				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, subscriber.Name, subscriber.Email, req.ScheduledAt, nil, nil)
+				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, subscriber.Name, subscriber.Email, nil, nil)
 				if err != nil {
 					return 0, err // Or handle error more gracefully
 				}
@@ -218,7 +220,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 		// Increment campaign recipient count atomically by number of unique deliveries created.
 		// deliveries are deduplicated by email earlier in this function, so len(deliveries)
 		// represents unique recipients for this call.
-		if campaign.ID != "" && len(deliveries) > 0 {
+		if len(deliveries) > 0 {
 			if err := s.repo.IncrementStats(txCtx, campaign.ID, len(deliveries), 0, 0, 0, 0, 0); err != nil {
 				return 0, err
 			}
@@ -228,70 +230,111 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 	})
 }
 
-func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campaign *domain.Campaign, name, email string, scheduledAt *int64, individualData map[string]interface{}, individualHeaders map[string]string) (*domain.Delivery, error) {
-	deliveryID := uuid.New().String()
-	campaignID := campaign.ID
+func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campaign *domain.Campaign, name, email string, individualData map[string]interface{}, individualHeaders map[string]string) (*domain.Delivery, error) {
+	var err error
+
+	delivery := &domain.Delivery{
+		ID:    uuid.New().String(),
+		Type:  domain.DeliveryTypeCampaign,
+		Name:  name,
+		Email: email,
+		Tags:  campaign.Tags,
+	}
+	delivery.CampaignID = &campaign.ID
+
+	// Determine scheduledAt based on campaign status:
+	// - sending: enqueue immediately => scheduledAt = nil
+	// - scheduled: use campaign.ScheduledAt
+	// - other (draft/paused/...): create delivery but do not enqueue; to prevent immediate enqueue
+	//   we set scheduledAt to a far future timestamp when campaign.ScheduledAt is nil.
+	if campaign.Status == domain.CampaignStatusSending || campaign.Status == domain.CampaignStatusSent {
+		// immediate enqueue
+		delivery.Status = domain.DeliveryStatusScheduled
+		delivery.ScheduledAt = nil
+	} else if campaign.Status == domain.CampaignStatusScheduled {
+		// inherit campaign schedule (may be in future)
+		delivery.Status = domain.DeliveryStatusScheduled
+		delivery.ScheduledAt = campaign.ScheduledAt
+	} else {
+		delivery.Status = domain.DeliveryStatusIdle
+		delivery.ScheduledAt = nil
+	}
 
 	// Prepare data for templating
-	templateData := make(map[string]interface{})
+	delivery.Data = make(map[string]interface{})
 	for k, v := range campaign.Data {
-		templateData[k] = v
+		delivery.Data[k] = v
 	}
 	if individualData != nil {
 		for k, v := range individualData {
-			templateData[k] = v
+			delivery.Data[k] = v
 		}
 	}
-	templateData["deliveryId"] = deliveryID
-	templateData["name"] = name
-	templateData["email"] = email
+	delivery.Data["deliveryId"] = delivery.ID
+	delivery.Data["name"] = name
+	delivery.Data["email"] = email
 
 	// Render subject
-	renderedSubject, err := s.templateService.Render(campaign.Subject, templateData)
+	delivery.Subject, err = s.templateService.Render(campaign.Subject, delivery.Data)
 	if err != nil {
 		return nil, err
 	}
 
 	// Render HTML content
-	renderedHTML, err := s.templateService.Render(campaign.TemplateHTML, templateData)
+	delivery.BodyHTML, err = s.templateService.Render(campaign.TemplateHTML, delivery.Data)
 	if err != nil {
 		return nil, err
 	}
 
 	// Render text content
-	renderedText, err := s.templateService.Render(campaign.TemplateText, templateData)
+	delivery.BodyText, err = s.templateService.Render(campaign.TemplateText, delivery.Data)
 	if err != nil {
 		return nil, err
 	}
 
 	// Prepare headers
-	finalHeaders := make(map[string]string)
+	delivery.Headers = make(map[string]string)
 	for k, v := range campaign.Headers {
-		finalHeaders[k] = v
+		delivery.Headers[k] = v
 	}
 	if individualHeaders != nil {
 		for k, v := range individualHeaders {
-			finalHeaders[k] = v
+			delivery.Headers[k] = v
 		}
 	}
 
-	delivery := &domain.Delivery{
-		ID:              deliveryID,
-		CampaignID:      &campaignID,
-		Type:            domain.DeliveryTypeCampaign,
-		Status:          domain.DeliveryStatusScheduled,
-		Name:            name,
-		Email:           email,
-		Subject:         renderedSubject,
-		BodyHTML:        renderedHTML,
-		BodyText:        renderedText,
-		Data:            templateData,
-		Headers:         finalHeaders,
-		Tags:            campaign.Tags,
-		ScheduledAt:     scheduledAt,
-		SendScheduledAt: scheduledAt,
-	}
 	return delivery, nil
+}
+
+// ReleaseDueDeliveries finds campaigns whose ScheduledAt <= now and, for each campaign,
+// sets deliveries' send time in a single repository update (atomic per campaign).
+// Returns total number of deliveries updated across all campaigns.
+func (s *CampaignService) ReleaseDueDeliveries(ctx context.Context, now int64) (int, error) {
+	campaigns, err := s.repo.ListScheduledBefore(ctx, now)
+	if err != nil {
+		return 0, err
+	}
+
+	total := 0
+	for _, c := range campaigns {
+		// run per-campaign update inside a transaction to ensure atomicity
+		if err := repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
+			if err := s.repo.UpdateStatus(txCtx, c.ID, domain.CampaignStatusSending); err != nil {
+				return err
+			}
+
+			updated, err := s.db.DeliveryRepository().UpdateSendScheduledByCampaign(txCtx, c.ID, now)
+			if err != nil {
+				return err
+			}
+			total += updated
+			return nil
+		}); err != nil {
+			return total, err
+		}
+	}
+
+	return total, nil
 }
 
 // GetCampaignStats aggregates open and click counts per time bucket for the given campaigns.
