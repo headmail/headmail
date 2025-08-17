@@ -4,13 +4,15 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
 	"net/url"
-	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html"
 
 	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/domain"
@@ -329,36 +331,63 @@ func (s *DeliveryService) sendMail(d *domain.Delivery) error {
 	return s.mailer.Send(context.Background(), d)
 }
 
-// injectTracking rewrites all links in the provided HTML to route through the click
-// tracker and appends an open-tracking 1x1 image pointing to the open tracker.
-func (s *DeliveryService) injectTracking(deliveryID, html string) string {
-	// rewrite links: href="..." -> href="https://{host}/r/{deliveryID}/c?u={urlencoded}"
-	re := regexp.MustCompile(`(?i)href="([^"#]+[^"]*)"`)
-	newHTML := re.ReplaceAllStringFunc(html, func(m string) string {
-		matches := re.FindStringSubmatch(m)
-		if len(matches) < 2 {
-			return m
-		}
-		orig := matches[1]
-		encoded := url.QueryEscape(orig)
-		trackingURL := s.trackingHost
-		// ensure scheme present in trackingHost
-		if !strings.HasPrefix(trackingURL, "http://") && !strings.HasPrefix(trackingURL, "https://") {
-			trackingURL = "https://" + strings.TrimRight(trackingURL, "/")
-		}
-		newHref := trackingURL + "/r/" + deliveryID + "/c?u=" + encoded
-		return `href="` + newHref + `"`
-	})
+// injectTracking rewrites only anchor tag href attributes in the provided HTML
+// to route through the click tracker and appends an open-tracking 1x1 image.
+// Uses an HTML parser to modify only <a> href attributes.
+func (s *DeliveryService) injectTracking(deliveryID, htmlStr string) string {
+	// parse HTML document
+	doc, err := html.Parse(strings.NewReader(htmlStr))
+	if err != nil {
+		// fallback: append pixel and return original
+		return s.appendPixel(htmlStr, deliveryID)
+	}
 
-	// append tracking pixel before </body> or at end
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if n.Type == html.ElementNode && strings.EqualFold(n.Data, "a") {
+			for i, a := range n.Attr {
+				if strings.EqualFold(a.Key, "href") {
+					orig := a.Val
+					lower := strings.ToLower(orig)
+					if !strings.HasPrefix(lower, "http") || strings.Contains(orig, "/r/"+deliveryID+"/c") {
+						continue
+					}
+					encoded := url.QueryEscape(orig)
+					trackingURL := s.trackingHost
+					if !strings.HasPrefix(trackingURL, "http://") && !strings.HasPrefix(trackingURL, "https://") {
+						trackingURL = "https://" + strings.TrimRight(trackingURL, "/")
+					}
+					newHref := trackingURL + "/r/" + deliveryID + "/c?u=" + encoded
+					n.Attr[i].Val = newHref
+				}
+			}
+		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			walk(c)
+		}
+	}
+
+	walk(doc)
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, doc); err != nil {
+		return s.appendPixel(htmlStr, deliveryID)
+	}
+	out := buf.String()
+	// append pixel
+	return s.appendPixel(out, deliveryID)
+}
+
+// appendPixel appends the tracking pixel before </body> if present, otherwise at end.
+func (s *DeliveryService) appendPixel(htmlStr, deliveryID string) string {
 	pixelURL := s.trackingHost
 	if !strings.HasPrefix(pixelURL, "http://") && !strings.HasPrefix(pixelURL, "https://") {
 		pixelURL = "https://" + strings.TrimRight(pixelURL, "/")
 	}
 	pixel := `<img src="` + pixelURL + `/r/` + deliveryID + `/o" width="1" height="1" style="display:none" alt="">`
-
-	if idx := strings.LastIndex(strings.ToLower(newHTML), "</body>"); idx != -1 {
-		return newHTML[:idx] + pixel + newHTML[idx:]
+	lower := strings.ToLower(htmlStr)
+	if idx := strings.LastIndex(lower, "</body>"); idx != -1 {
+		return htmlStr[:idx] + pixel + htmlStr[idx:]
 	}
-	return newHTML + pixel
+	return htmlStr + pixel
 }
