@@ -1033,6 +1033,90 @@ paths:
       summary: Update campaign status
       tags:
       - campaigns
+  /deliveries/{deliveryID}/retry:
+    post:
+      description: Reset attempt metadata and perform an immediate retry for the specified
+        delivery ID. Returns the updated delivery object.
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain.Delivery'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Internal Server Error
+      summary: Retry a delivery immediately (synchronous)
+      tags:
+      - deliveries
+  /deliveries/{deliveryID}/send-now:
+    post:
+      description: Perform an immediate send attempt for the specified delivery ID.
+        This runs synchronously and returns the updated delivery object.
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain.Delivery'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Internal Server Error
+      summary: Send a delivery immediately (synchronous)
+      tags:
+      - deliveries
   /healthz:
     get:
       description: Returns basic health information (status, time, uptime)

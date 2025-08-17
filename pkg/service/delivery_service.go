@@ -33,9 +33,17 @@ type DeliveryServiceProvider interface {
 	GetDeliveriesByCampaign(ctx context.Context, campaignID string, pagination repository.Pagination) ([]*domain.Delivery, int, error)
 	UpdateDeliveryStatus(ctx context.Context, id string, status string) error
 
+	// Handle queued work
 	HandleDeliveryQueuedItem(ctx context.Context, workerID string, item *queue.QueueItem) error
 
+	// Handle bounced mail from receiver
 	HandleBouncedMail(ctx context.Context, event *receiver.Event) error
+
+	// SendNow performs an immediate synchronous send attempt for the specified delivery ID.
+	SendNow(ctx context.Context, deliveryID string) (*domain.Delivery, error)
+
+	// Retry performs an immediate retry of the specified delivery (resets attempts/flags and sends now).
+	Retry(ctx context.Context, deliveryID string) (*domain.Delivery, error)
 }
 
 // DeliveryService provides business logic for delivery management.
@@ -229,6 +237,92 @@ func (s *DeliveryService) HandleBouncedMail(ctx context.Context, data *receiver.
 	return nil
 }
 
+/*
+SendNow performs an immediate synchronous send attempt for the specified delivery ID.
+It will perform the send in-process (not via queue), update delivery status and campaign counters
+similarly to the worker logic.
+*/
+func (s *DeliveryService) SendNow(ctx context.Context, deliveryID string) (*domain.Delivery, error) {
+	// load delivery
+	d, err := s.repo.GetByID(ctx, deliveryID)
+	if err != nil {
+		return nil, err
+	}
+
+	prevStatus := d.Status
+
+	// inject tracking before sending
+	if d.BodyHTML != "" && s.trackingHost != "" {
+		d.BodyHTML = s.injectTracking(d.ID, d.BodyHTML)
+	}
+
+	err = s.mailer.Send(ctx, d)
+	now := time.Now().Unix()
+	if err != nil {
+		d.FailedAt = &now
+		d.Attempts++
+		if d.Attempts >= s.maxAttempts {
+			d.Status = domain.DeliveryStatusFailed
+		} else {
+			d.Status = domain.DeliveryStatusScheduled
+			nextScheduledAt := now + 300
+			d.SendScheduledAt = &nextScheduledAt
+		}
+	} else {
+		d.SentAt = &now
+		d.Status = domain.DeliveryStatusSent
+	}
+
+	// persist delivery changes
+	if perr := s.repo.Update(ctx, d); perr != nil {
+		return nil, perr
+	}
+
+	// update campaign-level counters only on state transitions
+	if d.CampaignID != nil && *d.CampaignID != "" {
+		cid := *d.CampaignID
+		if prevStatus != domain.DeliveryStatusSent && d.Status == domain.DeliveryStatusSent {
+			if cerr := s.db.CampaignRepository().IncrementStats(ctx, cid, 0, 1, 0, 0, 0, 0); cerr != nil {
+				log.Printf("SendNow: failed to increment campaign delivered count for %s: %v", cid, cerr)
+			}
+		}
+		if prevStatus != domain.DeliveryStatusFailed && d.Status == domain.DeliveryStatusFailed {
+			if cerr := s.db.CampaignRepository().IncrementStats(ctx, cid, 0, 0, 1, 0, 0, 0); cerr != nil {
+				log.Printf("SendNow: failed to increment campaign failed count for %s: %v", cid, cerr)
+			}
+		}
+	}
+
+	return d, err
+}
+
+/*
+Retry resets attempt-related fields and performs an immediate synchronous send attempt.
+*/
+func (s *DeliveryService) Retry(ctx context.Context, deliveryID string) (*domain.Delivery, error) {
+	// load delivery
+	d, err := s.repo.GetByID(ctx, deliveryID)
+	if err != nil {
+		return nil, err
+	}
+
+	// reset attempt metadata so send can be retried immediately
+	d.Attempts = 0
+	d.FailedAt = nil
+	d.FailureReason = nil
+	d.SendScheduledAt = nil
+	// mark as scheduled so SendNow logic treats it appropriately
+	d.Status = domain.DeliveryStatusScheduled
+
+	if err := s.repo.Update(ctx, d); err != nil {
+		return nil, err
+	}
+
+	// perform immediate synchronous send
+	return s.SendNow(ctx, deliveryID)
+}
+
+// sendMail - helper retained for compatibility with other code paths
 func (s *DeliveryService) sendMail(d *domain.Delivery) error {
 	// Delegate to configured mailer implementation.
 	// Mailer implementations are responsible for building headers/body and sending.

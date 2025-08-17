@@ -77,19 +77,45 @@ export const createCampaignDeliveries = async (
     return resp.data;
 };
 
-// Get deliveries for a campaign
-export const getCampaignDeliveries = async (
-    campaignID: string,
-    params?: paths["/campaigns/{campaignID}/deliveries"]["get"]["parameters"]["query"]
-) => {
-    const resp = await GET("/campaigns/{campaignID}/deliveries", {
-        params: {
-            path: { campaignID },
-            query: params,
-        },
-    });
-    return resp.data;
-};
+ // Get deliveries for a campaign
+ export const getCampaignDeliveries = async (
+     campaignID: string,
+     params?: paths["/campaigns/{campaignID}/deliveries"]["get"]["parameters"]["query"]
+ ) => {
+     const resp = await GET("/campaigns/{campaignID}/deliveries", {
+         params: {
+             path: { campaignID },
+             query: params,
+         },
+     });
+     return resp.data;
+ };
+ 
+ // Send a delivery immediately (synchronous)
+ export const sendDeliveryNow = async (deliveryID: string) => {
+     const resp = await fetch(`/api/deliveries/${deliveryID}/send-now`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+     });
+     if (!resp.ok) {
+         const text = await resp.text();
+         throw new Error(text || `send-now failed: ${resp.status}`);
+     }
+     return resp.json();
+ };
+ 
+ // Retry a delivery immediately (synchronous)
+ export const retryDelivery = async (deliveryID: string) => {
+     const resp = await fetch(`/api/deliveries/${deliveryID}/retry`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+     });
+     if (!resp.ok) {
+         const text = await resp.text();
+         throw new Error(text || `retry failed: ${resp.status}`);
+     }
+     return resp.json();
+ };
 
 // Lists
 export const getLists = async (params: paths["/lists"]["get"]["parameters"]["query"]) => {

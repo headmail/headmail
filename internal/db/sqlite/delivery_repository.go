@@ -179,7 +179,7 @@ func (r *deliveryRepository) List(ctx context.Context, filter repository.Deliver
 	}
 
 	offset := (pagination.Page - 1) * pagination.Limit
-	if err := query.Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
 		return nil, 0, err
 	}
 

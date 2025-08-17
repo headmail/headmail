@@ -8,10 +8,10 @@
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">캠페인 상세</h1>
       <div class="flex items-center gap-2">
-        <button :class="activeTab === 'detail' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'detail'">상세</button>
-        <button :class="activeTab === 'stats' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'stats'">통계</button>
-        <button :class="activeTab === 'send' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'send'">전송</button>
-        <button :class="activeTab === 'deliveries' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="activeTab = 'deliveries'">전송 상태</button>
+        <button :class="activeTab === 'detail' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="setTab('detail')">상세</button>
+        <button :class="activeTab === 'stats' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="setTab('stats')">통계</button>
+        <button :class="activeTab === 'send' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="setTab('send')">전송</button>
+        <button :class="activeTab === 'deliveries' ? 'px-4 py-2 bg-blue-600 text-white rounded' : 'px-4 py-2 border rounded'" @click="setTab('deliveries')">전송 상태</button>
       </div>
     </div>
 
@@ -90,16 +90,17 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, computed} from 'vue';
-import { useRoute } from 'vue-router';
+import {ref, onMounted, computed, watch} from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { getCampaign, updateCampaign, getTemplate } from '../../api';
 import DeliveryForm from '../../components/DeliveryForm.vue';
 import StatsChart from '../../components/StatsChart.vue';
-import TemplatePickerModal from '../../components/TemplatePickerModal.vue';
 import Deliveries from '../../components/Deliveries.vue';
+import TemplatePickerModal from '../../components/TemplatePickerModal.vue';
 import type { Campaign } from '../../types';
 
 const route = useRoute();
+const router = useRouter();
 const campaign = ref<Campaign>({
   id: '',
   name: '',
@@ -110,7 +111,7 @@ const campaign = ref<Campaign>({
   template_text: '',
 });
 const loading = ref(true);
-const activeTab = ref<'detail' | 'send' | 'stats' | 'deliveries'>('detail');
+const activeTab = ref<'detail' | 'send' | 'stats' | 'deliveries'>((route.query.tab as any) || 'detail');
 
 const pickerVisible = ref(false);
 const selectedTemplateName = ref<string | null>(null);
@@ -204,7 +205,34 @@ const onDeliverySaved = (resp: any) => {
   fetchCampaign();
 };
 
-const onDeliveryCancel = () => {
-  activeTab.value = 'detail';
+// setTab updates the route query so the selected tab is preserved across refresh/back/forward
+const setTab = (tab: 'detail' | 'send' | 'stats' | 'deliveries') => {
+  activeTab.value = tab;
+  router.replace({
+    name: route.name as string,
+    params: route.params,
+    query: {
+      ...route.query,
+      tab,
+    },
+  });
 };
+
+// on cancel, return to detail tab using router-aware helper
+const onDeliveryCancel = () => {
+  setTab('detail');
+};
+
+// keep activeTab in sync with route query param changes (back/forward navigation)
+watch(
+  () => route.query.tab,
+  (t) => {
+    const tt = (t as any) || 'detail';
+    if (tt === 'detail' || tt === 'send' || tt === 'stats' || tt === 'deliveries') {
+      activeTab.value = tt as any;
+    } else {
+      activeTab.value = 'detail';
+    }
+  }
+);
 </script>
