@@ -120,10 +120,10 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 	// create mailer implementation from config
 	trackingHost := cfg.Server.Public.URL
 	maxAttempts := cfg.SMTP.Send.Attempts
-	srv.deliveryService = service.NewDeliveryService(srv.db, q, srv.mailer, trackingHost, maxAttempts)
 
 	templateService := template.NewService()
 	srv.listService = service.NewListService(srv.db)
+	srv.deliveryService = service.NewDeliveryService(srv.db, templateService, q, srv.mailer, trackingHost, maxAttempts)
 	srv.campaignService = service.NewCampaignService(
 		srv.db,
 		srv.deliveryService,
@@ -155,7 +155,7 @@ func (s *Server) registerAdminRoutes() {
 
 	listHandler := admin.NewListHandler(s.listService)
 	campaignHandler := admin.NewCampaignHandler(s.campaignService)
-	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService)
+	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService, s.templateService)
 	subscriberHandler := admin.NewSubscriberHandler(s.listService)
 	templateHandler := admin.NewTemplateHandler(s.templateService)
 

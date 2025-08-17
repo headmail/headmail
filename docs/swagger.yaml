@@ -531,6 +531,10 @@ components:
           type: object
         email:
           type: string
+        from_email:
+          type: string
+        from_name:
+          type: string
         headers:
           additionalProperties:
             type: string
@@ -544,6 +548,12 @@ components:
             type: string
           type: array
           uniqueItems: false
+        template_html:
+          type: string
+        template_id:
+          type: string
+        template_text:
+          type: string
       type: object
     github_com_headmail_headmail_pkg_api_admin_dto.Individual:
       properties:

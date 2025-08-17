@@ -18,12 +18,13 @@ import (
 
 // DeliveryHandler handles HTTP requests for deliveries.
 type DeliveryHandler struct {
-	service service.DeliveryServiceProvider
+	service         service.DeliveryServiceProvider
+	templateService service.TemplateServiceProvider
 }
 
 // NewDeliveryHandler creates a new DeliveryHandler.
-func NewDeliveryHandler(service service.DeliveryServiceProvider) *DeliveryHandler {
-	return &DeliveryHandler{service: service}
+func NewDeliveryHandler(service service.DeliveryServiceProvider, templateService service.TemplateServiceProvider) *DeliveryHandler {
+	return &DeliveryHandler{service: service, templateService: templateService}
 }
 
 // RegisterRoutes registers the delivery routes to the router.
@@ -119,14 +120,53 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 		return
 	}
 
+	// Prepare subject/body from request and/or template
+	subject := ""
+	if req.Subject != nil {
+		subject = *req.Subject
+	}
+	bodyHTML := ""
+	bodyText := ""
+
+	// If a template_id is provided, load template and fill missing parts from it.
+	if req.TemplateID != nil {
+		tmpl, err := h.templateService.GetTemplate(r.Context(), *req.TemplateID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if subject == "" {
+			subject = tmpl.Subject
+		}
+		bodyHTML = tmpl.BodyHTML
+		bodyText = tmpl.BodyText
+	} else {
+		if req.TemplateHTML != nil {
+			bodyHTML = *req.TemplateHTML
+		}
+		if req.TemplateText != nil {
+			bodyText = *req.TemplateText
+		}
+	}
+
 	delivery := &domain.Delivery{
-		Type:    "transactional",
-		Name:    req.Name,
-		Email:   req.Email,
-		Subject: req.Subject,
-		Data:    req.Data,
-		Headers: req.Headers,
-		Tags:    req.Tags,
+		Type:     domain.DeliveryTypeTransaction,
+		Name:     req.Name,
+		Email:    req.Email,
+		Subject:  subject,
+		BodyHTML: bodyHTML,
+		BodyText: bodyText,
+		Data:     req.Data,
+		Headers:  req.Headers,
+		Tags:     req.Tags,
+	}
+
+	// Keep template id reference in data for auditing/rendering if provided
+	if req.TemplateID != nil && *req.TemplateID != "" {
+		if delivery.Data == nil {
+			delivery.Data = map[string]interface{}{}
+		}
+		delivery.Data["template_id"] = *req.TemplateID
 	}
 
 	if err := h.service.CreateDelivery(r.Context(), delivery); err != nil {

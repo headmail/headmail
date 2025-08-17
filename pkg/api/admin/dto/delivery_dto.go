@@ -7,12 +7,17 @@ import "github.com/headmail/headmail/pkg/domain"
 
 // CreateTransactionalDeliveryRequest is the request for creating a transactional delivery.
 type CreateTransactionalDeliveryRequest struct {
-	Name    string                 `json:"name"`
-	Email   string                 `json:"email"`
-	Subject string                 `json:"subject"`
-	Data    map[string]interface{} `json:"data"`
-	Headers map[string]string      `json:"headers"`
-	Tags    []string               `json:"tags"`
+	Name         string                 `json:"name"`
+	Email        string                 `json:"email"`
+	FromName     *string                `json:"from_name"`
+	FromEmail    *string                `json:"from_email"`
+	Subject      *string                `json:"subject"`
+	TemplateID   *string                `json:"template_id,omitempty"`
+	TemplateHTML *string                `json:"template_html"`
+	TemplateText *string                `json:"template_text"`
+	Data         map[string]interface{} `json:"data"`
+	Tags         []string               `json:"tags"`
+	Headers      map[string]string      `json:"headers"`
 }
 
 // Individual defines an individual recipient for a delivery.

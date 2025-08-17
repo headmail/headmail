@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/headmail/headmail/pkg/template"
 	"golang.org/x/net/html"
 
 	"github.com/google/uuid"
@@ -50,41 +51,75 @@ type DeliveryServiceProvider interface {
 
 // DeliveryService provides business logic for delivery management.
 type DeliveryService struct {
-	db           repository.DB
-	repo         repository.DeliveryRepository
-	eventRepo    repository.EventRepository
-	queue        queue.Queue
-	mailer       mailer.Mailer
-	trackingHost string
-	maxAttempts  int
+	db              repository.DB
+	templateService *template.Service
+	repo            repository.DeliveryRepository
+	eventRepo       repository.EventRepository
+	queue           queue.Queue
+	mailer          mailer.Mailer
+	trackingHost    string
+	maxAttempts     int
 }
 
 // NewDeliveryService creates a new DeliveryService.
-func NewDeliveryService(db repository.DB, q queue.Queue, m mailer.Mailer, trackingHost string, maxAttempts int) *DeliveryService {
+func NewDeliveryService(db repository.DB, templateService *template.Service, q queue.Queue, m mailer.Mailer, trackingHost string, maxAttempts int) *DeliveryService {
 	return &DeliveryService{
-		db:           db,
-		repo:         db.DeliveryRepository(),
-		eventRepo:    db.EventRepository(),
-		queue:        q,
-		mailer:       m,
-		trackingHost: trackingHost,
-		maxAttempts:  maxAttempts,
+		db:              db,
+		templateService: templateService,
+		repo:            db.DeliveryRepository(),
+		eventRepo:       db.EventRepository(),
+		queue:           q,
+		mailer:          m,
+		trackingHost:    trackingHost,
+		maxAttempts:     maxAttempts,
 	}
 }
 
 // CreateDelivery creates a new delivery and enqueues immediate deliveries.
 func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.Delivery) error {
-	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
-		// prepare delivery
-		delivery.ID = uuid.New().String()
-		if delivery.CreatedAt == 0 {
-			delivery.CreatedAt = time.Now().Unix()
-		}
-		// default status
-		if delivery.Status == "" {
-			delivery.Status = domain.DeliveryStatusScheduled
-		}
+	var err error
 
+	delivery.ID = uuid.New().String()
+	
+	// prepare delivery
+	if delivery.CreatedAt == 0 {
+		delivery.CreatedAt = time.Now().Unix()
+	}
+	// default status
+	if delivery.Status == "" {
+		delivery.Status = domain.DeliveryStatusScheduled
+	}
+
+	// Prepare data for templating
+	templateData := make(map[string]interface{})
+	if delivery.Data != nil {
+		for k, v := range delivery.Data {
+			templateData[k] = v
+		}
+	}
+	templateData["deliveryId"] = delivery.ID
+	templateData["name"] = delivery.Name
+	templateData["email"] = delivery.Email
+
+	// Render subject
+	delivery.Subject, err = s.templateService.Render(delivery.Subject, templateData)
+	if err != nil {
+		return err
+	}
+
+	// Render HTML content
+	delivery.BodyHTML, err = s.templateService.Render(delivery.BodyHTML, templateData)
+	if err != nil {
+		return err
+	}
+
+	// Render text content
+	delivery.BodyText, err = s.templateService.Render(delivery.BodyText, templateData)
+	if err != nil {
+		return err
+	}
+
+	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
 		// create delivery
 		if err := s.repo.Create(txCtx, delivery); err != nil {
 			return err
