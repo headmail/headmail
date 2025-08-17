@@ -161,6 +161,15 @@ export const getSubscriber = async (subscriberID: string) => {
     const resp = await GET("/subscribers/{subscriberID}", {params: {path: {subscriberID}}});
     return resp.data;
 };
+export const createSubscribers = async (req: paths["/subscribers"]["post"]["requestBody"]["content"]["application/json"]) => {
+    const resp = await POST("/subscribers", {
+        body: req,
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
+    return resp.data;
+};
 export const updateSubscriber = async (subscriberID: string, req: paths["/subscribers/{subscriberID}"]["put"]["requestBody"]["content"]["application/json"]) => {
     const resp = await PUT("/subscribers/{subscriberID}", {
         params: {

@@ -30,6 +30,7 @@ func NewSubscriberHandler(service service.ListServiceProvider) *SubscriberHandle
 // RegisterRoutes registers the subscriber routes to the router.
 func (h *SubscriberHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/subscribers", h.listSubscribers)
+	r.Post("/subscribers", h.addSubscribers)
 	r.Route("/subscribers/{subscriberID}", func(r chi.Router) {
 		r.Get("/", h.getSubscriber)
 		r.Put("/", h.updateSubscriber)
@@ -39,8 +40,8 @@ func (h *SubscriberHandler) RegisterRoutes(r chi.Router) {
 
 // CreateSubscribersRequest is the request for creating subscribers.
 type CreateSubscribersRequest struct {
+	ListID      *string                        `json:"list_id"`
 	Subscribers []*dto.CreateSubscriberRequest `json:"subscribers"`
-	Append      bool                           `json:"append"`
 }
 
 type EmptyResponse struct{}
@@ -50,12 +51,10 @@ type EmptyResponse struct{}
 // @Tags subscribers
 // @Accept  json
 // @Produce  json
-// @Param   listID  path  string  true  "List ID"
 // @Param   request  body  CreateSubscribersRequest  true  "Subscribers to add"
 // @Success 201 {object} EmptyResponse
-// @Router /lists/{listID}/subscribers [post]
-func (h *SubscriberHandler) addSubscriber(w http.ResponseWriter, r *http.Request) {
-	listID := chi.URLParam(r, "listID")
+// @Router /subscribers [post]
+func (h *SubscriberHandler) addSubscribers(w http.ResponseWriter, r *http.Request) {
 	var req CreateSubscribersRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -69,12 +68,14 @@ func (h *SubscriberHandler) addSubscriber(w http.ResponseWriter, r *http.Request
 			Email:  subReq.Email,
 			Name:   subReq.Name,
 			Status: domain.SubscriberStatusEnabled,
-			Lists: []domain.SubscriberList{
+		}
+		if req.ListID != nil && *req.ListID != "" {
+			sub.Lists = []domain.SubscriberList{
 				{
-					ListID: listID,
+					ListID: *req.ListID,
 					Status: domain.SubscriberListStatusConfirmed,
 				},
-			},
+			}
 		}
 		if subReq.Status != nil && *subReq.Status != "" {
 			sub.Status = *subReq.Status

@@ -241,7 +241,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import { getSubscribers, updateSubscriber, deleteSubscriber, getLists, patchListSubscribers } from '../../api';
+import { getSubscribers, createSubscribers, updateSubscriber, deleteSubscriber, getLists, patchListSubscribers } from '../../api';
 import type { Subscriber, List, PaginationResponse } from '../../types';
 import Pagination from '../../components/Pagination.vue';
 import ListPickerModal from '../../components/ListPickerModal.vue';
@@ -299,13 +299,24 @@ const saveSubscriber = async () => {
       const { list_id, ...updateData } = subscriberForm;
       await updateSubscriber(editingSubscriber.value.id, updateData);
     } else {
-      // Create functionality not available in API yet
-      console.log('Create subscriber functionality not implemented');
+      // Create new subscriber(s) — API accepts an array of subscribers and optional list_id
+      const payload = {
+        list_id: subscriberForm.list_id || undefined,
+        subscribers: [
+          {
+            email: subscriberForm.email,
+            name: subscriberForm.name || undefined,
+            status: subscriberForm.status || undefined,
+          },
+        ],
+      };
+      await createSubscribers(payload);
     }
-    fetchSubscribers();
+    await fetchSubscribers();
     closeModal();
   } catch (error) {
     console.error('Failed to save subscriber:', error);
+    alert('구독자 저장에 실패했습니다.');
   }
 };
 

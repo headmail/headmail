@@ -2,8 +2,8 @@ components:
   schemas:
     api_admin.CreateSubscribersRequest:
       properties:
-        append:
-          type: boolean
+        list_id:
+          type: string
         subscribers:
           items:
             $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest'
@@ -1326,7 +1326,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/api_admin.CreateSubscribersRequest'
+              $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscribersRequest'
         description: Subscribers to add
         required: true
       responses:
@@ -1338,7 +1338,7 @@ paths:
           description: Created
       summary: Add subscribers to a list
       tags:
-      - subscribers
+      - lists
     put:
       description: Replace list members atomically
       parameters:
@@ -1472,6 +1472,25 @@ paths:
                 $ref: '#/components/schemas/api_admin.PaginatedListResponse-domain_Subscriber'
           description: OK
       summary: List subscribers
+      tags:
+      - subscribers
+    post:
+      description: Add subscribers to a list
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/api_admin.CreateSubscribersRequest'
+        description: Subscribers to add
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/api_admin.EmptyResponse'
+          description: Created
+      summary: Add subscribers to a list
       tags:
       - subscribers
   /subscribers/{subscriberID}:

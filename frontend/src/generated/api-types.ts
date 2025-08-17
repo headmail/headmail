@@ -915,7 +915,7 @@ export interface paths {
             /** @description Subscribers to add */
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["api_admin.CreateSubscribersRequest"];
+                    "application/json": components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscribersRequest"];
                 };
             };
             responses: {
@@ -1154,7 +1154,35 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Add subscribers to a list
+         * @description Add subscribers to a list
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Subscribers to add */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["api_admin.CreateSubscribersRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["api_admin.EmptyResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1566,7 +1594,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         "api_admin.CreateSubscribersRequest": {
-            append?: boolean;
+            list_id?: string;
             subscribers?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest"][];
         };
         "api_admin.DeleteResponse": {

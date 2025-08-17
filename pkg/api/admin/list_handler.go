@@ -35,7 +35,6 @@ func (h *ListHandler) RegisterRoutes(r chi.Router) {
 
 		// Subscribers management under a list
 		r.Route("/{listID}/subscribers", func(r chi.Router) {
-			r.Post("/", h.addSubscribers)
 			r.Get("/", h.listSubscribersOfList)
 			r.Patch("/", h.patchSubscribersOfList)
 			r.Put("/", h.replaceSubscribersOfList)
