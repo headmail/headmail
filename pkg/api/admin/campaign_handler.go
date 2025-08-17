@@ -20,7 +20,8 @@ import (
 
 // UpdateCampaignStatusRequest is the request for updating a campaign's status.
 type UpdateCampaignStatusRequest struct {
-	Status domain.CampaignStatus `json:"status"`
+	Status      domain.CampaignStatus `json:"status"`
+	ScheduledAt *int64                `json:"scheduled_at,omitempty"`
 }
 
 // CampaignHandler handles HTTP requests for campaigns.
@@ -321,7 +322,18 @@ func (h *CampaignHandler) updateCampaignStatus(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	if err := h.service.UpdateCampaignStatus(r.Context(), campaignID, req.Status); err != nil {
+	campaign, err := h.service.GetCampaign(r.Context(), campaignID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if campaign == nil {
+		http.Error(w, "campaign not found", http.StatusNotFound)
+		return
+	}
+	campaign.Status = req.Status
+	campaign.ScheduledAt = req.ScheduledAt
+	if err := h.service.UpdateCampaign(r.Context(), campaign); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -354,7 +366,6 @@ func (h *CampaignHandler) createCampaignDeliveries(w http.ResponseWriter, r *htt
 
 	resp := &dto.CreateDeliveriesResponse{
 		Status:            "scheduled",
-		ScheduledAt:       req.ScheduledAt,
 		DeliveriesCreated: count,
 	}
 

@@ -72,6 +72,9 @@ type CampaignRepository interface {
 	List(ctx context.Context, filter CampaignFilter, pagination Pagination) ([]*domain.Campaign, int, error)
 	UpdateStatus(ctx context.Context, id string, status domain.CampaignStatus) error
 
+	// ListScheduledBefore returns campaigns whose scheduled_at is non-null and <= ts.
+	ListScheduledBefore(ctx context.Context, ts int64) ([]*domain.Campaign, error)
+
 	// IncrementStats atomically increments per-campaign counters.
 	// Provide deltas for fields you want to change; pass 0 for no-op.
 	IncrementStats(ctx context.Context, id string, recipientDelta int, deliveredDelta int, failedDelta int, openDelta int, clickDelta int, bounceDelta int) error
@@ -89,7 +92,12 @@ type DeliveryRepository interface {
 	ListScheduledBefore(ctx context.Context, ts int64, limit int) ([]*domain.Delivery, error)
 	GetByCampaignID(ctx context.Context, campaignID string, pagination Pagination) ([]*domain.Delivery, int, error)
 
-	UpdateStatus(ctx context.Context, id string, status string) error
+	UpdateStatus(ctx context.Context, id string, status domain.DeliveryStatus) error
+
+	// UpdateSendScheduledByCampaign sets send_scheduled_at = ts for deliveries belonging to campaign_id
+	// where send_scheduled_at IS NULL and scheduled_at <= ts and status = scheduled.
+	// Returns number of rows updated.
+	UpdateSendScheduledByCampaign(ctx context.Context, campaignID string, ts int64) (int, error)
 
 	// IncrementCount atomically increments a single counter (open, click, bounce) for a delivery.
 	// Returns a boolean indicating whether this was the first event of that type for the delivery

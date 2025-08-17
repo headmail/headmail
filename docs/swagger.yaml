@@ -80,6 +80,8 @@ components:
       type: object
     api_admin.UpdateCampaignStatusRequest:
       properties:
+        scheduled_at:
+          type: integer
         status:
           type: string
           x-enum-varnames:
@@ -242,8 +244,6 @@ components:
         scheduled_at:
           description: Scheduled time
           type: integer
-        send_scheduled_at:
-          type: integer
         sent_at:
           description: Time of sending
           type: integer
@@ -265,6 +265,7 @@ components:
       description: scheduled, sending, sent, delivered, failed, bounced
       type: string
       x-enum-varnames:
+      - DeliveryStatusIdle
       - DeliveryStatusScheduled
       - DeliveryStatusSending
       - DeliveryStatusSent
@@ -458,15 +459,10 @@ components:
             type: string
           type: array
           uniqueItems: false
-        scheduled_at:
-          description: ScheduledAt seconds
-          type: integer
       type: object
     github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesResponse:
       properties:
         deliveries_created:
-          type: integer
-        scheduled_at:
           type: integer
         status:
           type: string

@@ -14,7 +14,7 @@
 
     <div class="mb-4">
       <label class="block text-sm font-medium text-gray-700">제목</label>
-      <input v-model="campaign.subject" type="text" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+      <input v-model="campaign.subject" type="text" :placeholder="subjectPlaceholder" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
     </div>
 
     <div class="mb-4">
@@ -53,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import {computed, ref} from 'vue';
 import { useRouter } from 'vue-router';
 import { createCampaign, getTemplate } from '../../api';
 import TemplatePickerModal from '../../components/TemplatePickerModal.vue';
@@ -71,6 +71,14 @@ const campaign = ref<any>({
 const creating = ref(false);
 const pickerVisible = ref(false);
 const selectedTemplateName = ref<string | null>(null);
+
+const subjectPlaceholder = computed(() => {
+  if (!campaign.value.template_id) {
+    return '';
+  } else {
+    return '템플릿의 제목으로 대체됩니다';
+  }
+});
 
 const openPicker = () => {
   pickerVisible.value = true;

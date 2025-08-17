@@ -36,30 +36,29 @@ func domainToDeliveryEntity(d *domain.Delivery) (*Delivery, error) {
 	}
 
 	return &Delivery{
-		ID:              d.ID,
-		CampaignID:      d.CampaignID,
-		Type:            d.Type,
-		Status:          d.Status,
-		Name:            d.Name,
-		Email:           d.Email,
-		Subject:         d.Subject,
-		BodyHTML:        d.BodyHTML,
-		BodyText:        d.BodyText,
-		MessageID:       d.MessageID,
-		Data:            dataJSON,
-		Headers:         headersJSON,
-		Tags:            tagsJSON,
-		CreatedAt:       d.CreatedAt,
-		ScheduledAt:     d.ScheduledAt,
-		Attempts:        d.Attempts,
-		SendScheduledAt: d.SendScheduledAt,
-		SentAt:          d.SentAt,
-		OpenedAt:        d.OpenedAt,
-		FailedAt:        d.FailedAt,
-		FailureReason:   d.FailureReason,
-		OpenCount:       d.OpenCount,
-		ClickCount:      d.ClickCount,
-		BounceCount:     d.BounceCount,
+		ID:            d.ID,
+		CampaignID:    d.CampaignID,
+		Type:          d.Type,
+		Status:        d.Status,
+		Name:          d.Name,
+		Email:         d.Email,
+		Subject:       d.Subject,
+		BodyHTML:      d.BodyHTML,
+		BodyText:      d.BodyText,
+		MessageID:     d.MessageID,
+		Data:          dataJSON,
+		Headers:       headersJSON,
+		Tags:          tagsJSON,
+		CreatedAt:     d.CreatedAt,
+		ScheduledAt:   d.ScheduledAt,
+		Attempts:      d.Attempts,
+		SentAt:        d.SentAt,
+		OpenedAt:      d.OpenedAt,
+		FailedAt:      d.FailedAt,
+		FailureReason: d.FailureReason,
+		OpenCount:     d.OpenCount,
+		ClickCount:    d.ClickCount,
+		BounceCount:   d.BounceCount,
 	}, nil
 }
 
@@ -80,30 +79,29 @@ func entityToDeliveryDomain(e *Delivery) (*domain.Delivery, error) {
 	}
 
 	return &domain.Delivery{
-		ID:              e.ID,
-		CampaignID:      e.CampaignID,
-		Type:            e.Type,
-		Status:          e.Status,
-		Name:            e.Name,
-		Email:           e.Email,
-		Subject:         e.Subject,
-		BodyHTML:        e.BodyHTML,
-		BodyText:        e.BodyText,
-		MessageID:       e.MessageID,
-		Data:            data,
-		Headers:         headers,
-		Tags:            tags,
-		CreatedAt:       e.CreatedAt,
-		ScheduledAt:     e.ScheduledAt,
-		Attempts:        e.Attempts,
-		SendScheduledAt: e.SendScheduledAt,
-		SentAt:          e.SentAt,
-		OpenedAt:        e.OpenedAt,
-		FailedAt:        e.FailedAt,
-		FailureReason:   e.FailureReason,
-		OpenCount:       e.OpenCount,
-		ClickCount:      e.ClickCount,
-		BounceCount:     e.BounceCount,
+		ID:            e.ID,
+		CampaignID:    e.CampaignID,
+		Type:          e.Type,
+		Status:        e.Status,
+		Name:          e.Name,
+		Email:         e.Email,
+		Subject:       e.Subject,
+		BodyHTML:      e.BodyHTML,
+		BodyText:      e.BodyText,
+		MessageID:     e.MessageID,
+		Data:          data,
+		Headers:       headers,
+		Tags:          tags,
+		CreatedAt:     e.CreatedAt,
+		ScheduledAt:   e.ScheduledAt,
+		Attempts:      e.Attempts,
+		SentAt:        e.SentAt,
+		OpenedAt:      e.OpenedAt,
+		FailedAt:      e.FailedAt,
+		FailureReason: e.FailureReason,
+		OpenCount:     e.OpenCount,
+		ClickCount:    e.ClickCount,
+		BounceCount:   e.BounceCount,
 	}, nil
 }
 
@@ -209,9 +207,8 @@ func (r *deliveryRepository) ListScheduledBefore(ctx context.Context, ts int64, 
 	var entities []Delivery
 	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&Delivery{}).
-		Where("send_scheduled_at IS NOT NULL AND send_scheduled_at <= ?", ts).
-		Where("status = ?", domain.DeliveryStatusScheduled).
-		Order("send_scheduled_at ASC, created_at ASC").
+		Where("scheduled_at IS NOT NULL AND scheduled_at <= ? AND status = ?", ts, domain.DeliveryStatusScheduled).
+		Order("scheduled_at ASC, id ASC").
 		Limit(limit)
 
 	if err := query.Find(&entities).Error; err != nil {
@@ -269,7 +266,19 @@ func (r *deliveryRepository) IncrementCount(ctx context.Context, id string, even
 	}
 }
 
-func (r *deliveryRepository) UpdateStatus(ctx context.Context, id string, status string) error {
+func (r *deliveryRepository) UpdateStatus(ctx context.Context, id string, status domain.DeliveryStatus) error {
 	db := extractTx(ctx, r.db.DB)
 	return db.WithContext(ctx).Model(&Delivery{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *deliveryRepository) UpdateSendScheduledByCampaign(ctx context.Context, campaignID string, ts int64) (int, error) {
+	db := extractTx(ctx, r.db.DB)
+	res := db.WithContext(ctx).Model(&Delivery{}).
+		Where("campaign_id = ? AND status = ?", campaignID, domain.DeliveryStatusIdle).
+		Update("scheduled_at", ts).
+		Update("status", domain.DeliveryStatusScheduled)
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	return int(res.RowsAffected), nil
 }

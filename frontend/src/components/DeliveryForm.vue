@@ -57,12 +57,6 @@
       </div>
     </div>
 
-    <!-- 스케줄링 -->
-    <div>
-      <div class="text-sm text-gray-600 mb-2">스케줄 (비워두면 즉시 전송)</div>
-      <input v-model="scheduledAtLocal" type="datetime-local" class="px-3 py-2 border rounded" />
-    </div>
-
     <!-- 전송용 데이터/헤더 전역 입력 (옵션) -->
     <div>
       <div class="text-sm text-gray-600 mb-2">전송 공통 데이터 (JSON, 선택)</div>
@@ -94,6 +88,7 @@ import { ref } from 'vue';
 import ListPickerModal from './ListPickerModal.vue';
 import { createCampaignDeliveries } from '../api';
 import type { Campaign, List } from '../types';
+import type {components} from "@/generated/api-types.ts";
 
 // Props
 const props = defineProps<{
@@ -126,7 +121,6 @@ const commonHeadersText = ref<string>('');
 const commonDataError = ref<string | null>(null);
 const commonHeadersError = ref<string | null>(null);
 
-const scheduledAtLocal = ref<string>(''); // datetime-local string
 const submitting = ref(false);
 
 // helpers
@@ -258,11 +252,9 @@ const submit = async () => {
     };
   });
 
-  const body: any = {};
-  if (selectedLists.value.length > 0) body.lists = selectedLists.value.map((l: List) => l.id);
+  const body: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateDeliveriesRequest"] = {};
+  if (selectedLists.value.length > 0) body.lists = selectedLists.value.map((l: List) => l.id!!);
   if (individualsPayload.length > 0) body.individuals = individualsPayload;
-  const scheduled = toUnixSeconds(scheduledAtLocal.value);
-  if (scheduled) body.scheduled_at = scheduled;
 
   submitting.value = true;
   try {
@@ -274,7 +266,6 @@ const submit = async () => {
     individuals.value = [];
     commonDataText.value = '';
     commonHeadersText.value = '';
-    scheduledAtLocal.value = '';
   } catch (err) {
     console.error('전송 실패', err);
     alert('전송 요청에 실패했습니다.');

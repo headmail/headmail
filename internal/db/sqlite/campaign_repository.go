@@ -232,3 +232,26 @@ func (r *campaignRepository) IncrementStats(ctx context.Context, id string, reci
 
 	return db.WithContext(ctx).Exec(query, args...).Error
 }
+
+// ListScheduledBefore returns campaigns whose scheduled_at is non-null and <= ts.
+func (r *campaignRepository) ListScheduledBefore(ctx context.Context, ts int64) ([]*domain.Campaign, error) {
+	var entities []Campaign
+	db := extractTx(ctx, r.db.DB)
+	query := db.WithContext(ctx).Model(&Campaign{}).
+		Where("status = ? AND (scheduled_at <= ? OR scheduled_at IS NULL)", domain.CampaignStatusScheduled, ts)
+
+	if err := query.Find(&entities).Error; err != nil {
+		return nil, err
+	}
+
+	var campaigns []*domain.Campaign
+	for _, e := range entities {
+		c, err := entityToCampaignDomain(&e)
+		if err != nil {
+			return nil, err
+		}
+		campaigns = append(campaigns, c)
+	}
+
+	return campaigns, nil
+}

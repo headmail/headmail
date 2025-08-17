@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/url"
 	"strings"
@@ -34,7 +36,9 @@ type DeliveryServiceProvider interface {
 	UpdateDelivery(ctx context.Context, delivery *domain.Delivery) error
 	ListDeliveries(ctx context.Context, filter repository.DeliveryFilter, pagination repository.Pagination) ([]*domain.Delivery, int, error)
 	GetDeliveriesByCampaign(ctx context.Context, campaignID string, pagination repository.Pagination) ([]*domain.Delivery, int, error)
-	UpdateDeliveryStatus(ctx context.Context, id string, status string) error
+	UpdateDeliveryStatus(ctx context.Context, id string, status domain.DeliveryStatus) error
+
+	EnqueueDelivery(txCtx context.Context, delivery *domain.Delivery) error
 
 	// Handle queued work
 	HandleDeliveryQueuedItem(ctx context.Context, workerID string, item *queue.QueueItem) error
@@ -80,14 +84,14 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 	var err error
 
 	delivery.ID = uuid.New().String()
-	
+
 	// prepare delivery
 	if delivery.CreatedAt == 0 {
 		delivery.CreatedAt = time.Now().Unix()
 	}
 	// default status
 	if delivery.Status == "" {
-		delivery.Status = domain.DeliveryStatusScheduled
+		return errors.New("invalid status")
 	}
 
 	// Prepare data for templating
@@ -125,31 +129,35 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 			return err
 		}
 
-		// if no scheduled_at then enqueue immediately within the same transaction
-		if delivery.ScheduledAt == nil {
-			var err error
-			data := &deliveryQueueData{
-				DeliveryID: delivery.ID,
-			}
-			unique := "delivery:" + delivery.ID
-			item := &queue.QueueItem{
-				ID:        uuid.New().String(),
-				Type:      "delivery",
-				UniqueKey: &unique,
-				Status:    "pending",
-				CreatedAt: time.Now().Unix(),
-			}
-			item.Payload, err = json.Marshal(data)
-			if err != nil {
-				return err
-			}
-			if err := s.queue.Enqueue(txCtx, item); err != nil {
-				return err
-			}
+		if delivery.Status == domain.DeliveryStatusScheduled && delivery.ScheduledAt == nil {
+			return s.EnqueueDelivery(txCtx, delivery)
 		}
 
 		return nil
 	})
+}
+
+func (s *DeliveryService) EnqueueDelivery(txCtx context.Context, delivery *domain.Delivery) error {
+	var err error
+	data := &deliveryQueueData{
+		DeliveryID: delivery.ID,
+	}
+	unique := fmt.Sprintf("delivery:%s:%d", delivery.ID, delivery.Attempts)
+	item := &queue.QueueItem{
+		ID:        uuid.New().String(),
+		Type:      "delivery",
+		UniqueKey: &unique,
+		Status:    "pending",
+		CreatedAt: time.Now().Unix(),
+	}
+	item.Payload, err = json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	if err := s.queue.Enqueue(txCtx, item); err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetDelivery retrieves a delivery by its ID.
@@ -173,7 +181,7 @@ func (s *DeliveryService) GetDeliveriesByCampaign(ctx context.Context, campaignI
 }
 
 // UpdateDeliveryStatus updates the status of a delivery.
-func (s *DeliveryService) UpdateDeliveryStatus(ctx context.Context, id string, status string) error {
+func (s *DeliveryService) UpdateDeliveryStatus(ctx context.Context, id string, status domain.DeliveryStatus) error {
 	return s.repo.UpdateStatus(ctx, id, status)
 }
 
@@ -205,7 +213,7 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 		} else {
 			d.Status = domain.DeliveryStatusScheduled
 			nextScheduledAt := now + 300 // 5 minutes
-			d.SendScheduledAt = &nextScheduledAt
+			d.ScheduledAt = &nextScheduledAt
 		}
 
 		log.Printf("worker %s: mail send failed for delivery %s: %v", workerID, d.ID, err)
@@ -271,7 +279,7 @@ func (s *DeliveryService) HandleBouncedMail(ctx context.Context, data *receiver.
 		log.Printf("imap receiver: failed to save event: %v", err)
 	}
 
-	return nil
+	return s.UpdateDeliveryStatus(ctx, data.DeliveryID, domain.DeliveryStatusBounced)
 }
 
 /*
@@ -303,7 +311,7 @@ func (s *DeliveryService) SendNow(ctx context.Context, deliveryID string) (*doma
 		} else {
 			d.Status = domain.DeliveryStatusScheduled
 			nextScheduledAt := now + 300
-			d.SendScheduledAt = &nextScheduledAt
+			d.ScheduledAt = &nextScheduledAt
 		}
 	} else {
 		d.SentAt = &now
@@ -347,7 +355,7 @@ func (s *DeliveryService) Retry(ctx context.Context, deliveryID string) (*domain
 	d.Attempts = 0
 	d.FailedAt = nil
 	d.FailureReason = nil
-	d.SendScheduledAt = nil
+	d.ScheduledAt = nil
 	// mark as scheduled so SendNow logic treats it appropriately
 	d.Status = domain.DeliveryStatusScheduled
 

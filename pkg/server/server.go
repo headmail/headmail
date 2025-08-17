@@ -5,7 +5,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,9 +26,8 @@ import (
 	"github.com/headmail/headmail/pkg/api/public"
 	"github.com/headmail/headmail/pkg/config"
 	"github.com/headmail/headmail/pkg/db"
-	"github.com/headmail/headmail/pkg/queue"
 	"github.com/headmail/headmail/pkg/repository"
-	"github.com/headmail/headmail/pkg/service" // for worker package in same module
+	"github.com/headmail/headmail/pkg/service"
 
 	// Import providers to register them
 	_ "github.com/headmail/headmail/internal/db/sqlite"
@@ -195,7 +193,7 @@ func (s *Server) Serve() {
 	q := s.db.QueueRepository()
 	// start scheduler: enqueue scheduled deliveries every minute
 	go func() {
-		ticker := time.NewTicker(time.Minute)
+		ticker := time.NewTicker(time.Second * 5)
 		defer ticker.Stop()
 		for {
 			processed := true
@@ -253,6 +251,14 @@ func (s *Server) Serve() {
 func (s *Server) enqueueDueDeliveries() int {
 	ctx := context.Background()
 	now := time.Now().Unix()
+
+	// Ensure campaign-level scheduled deliveries are released first (sets send time on deliveries)
+	if n, err := s.campaignService.ReleaseDueDeliveries(ctx, now); err != nil {
+		log.Printf("scheduler: ReleaseDueDeliveries failed: %v", err)
+	} else if n > 0 {
+		log.Printf("scheduler: released %d deliveries for due campaigns", n)
+	}
+
 	// find scheduled deliveries directly from repository by timestamp
 	deliveries, err := s.db.DeliveryRepository().ListScheduledBefore(ctx, now, 1000)
 	if err != nil {
@@ -260,18 +266,7 @@ func (s *Server) enqueueDueDeliveries() int {
 		return 0
 	}
 	for _, d := range deliveries {
-		unique := "delivery:" + d.ID
-		payloadMap := map[string]string{"delivery_id": d.ID}
-		b, _ := json.Marshal(payloadMap)
-		item := &queue.QueueItem{
-			ID:        uuid.New().String(),
-			Type:      "delivery",
-			Payload:   b,
-			UniqueKey: &unique,
-			Status:    queue.StatusPending,
-			CreatedAt: time.Now().Unix(),
-		}
-		if err := s.db.QueueRepository().Enqueue(ctx, item); err != nil {
+		if err := s.deliveryService.EnqueueDelivery(ctx, d); err != nil {
 			log.Printf("scheduler: enqueue failed for delivery %s: %v", d.ID, err)
 		}
 	}
