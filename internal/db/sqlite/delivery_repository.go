@@ -179,7 +179,7 @@ func (r *deliveryRepository) List(ctx context.Context, filter repository.Deliver
 	}
 
 	offset := (pagination.Page - 1) * pagination.Limit
-	if err := query.Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
+	if err := query.Order("created_at DESC").Offset(offset).Limit(pagination.Limit).Find(&entities).Error; err != nil {
 		return nil, 0, err
 	}
 
@@ -230,31 +230,43 @@ func (r *deliveryRepository) ListScheduledBefore(ctx context.Context, ts int64, 
 	return deliveries, nil
 }
 
-func (r *deliveryRepository) IncrementCount(ctx context.Context, id string, eventType domain.EventType) error {
+func (r *deliveryRepository) IncrementCount(ctx context.Context, id string, eventType domain.EventType) (bool, error) {
 	db := extractTx(ctx, r.db.DB)
+
+	// Load current delivery counters and opened_at to determine if this is the first event of the type.
+	var entity Delivery
+	if err := db.WithContext(ctx).First(&entity, "id = ?", id).Error; err != nil {
+		return false, err
+	}
 
 	switch eventType {
 	case domain.EventTypeOpened:
-		// Atomically increment open_count and set opened_at if null (first open).
+		// Always increment delivery open_count, but detect if this is the first open for campaign-level counting.
+		isFirst := entity.OpenCount == 0
 		now := time.Now().Unix()
-		// Use COALESCE to set opened_at only if it's currently NULL.
-		if err := db.WithContext(ctx).Exec("UPDATE deliveries SET open_count = open_count + 1, opened_at = IFNULL(opened_at, ?) WHERE id = ?", now, id).Error; err != nil {
-			return err
+		// If opened_at is null, set it to now; always increment open_count.
+		if err := db.WithContext(ctx).Model(&Delivery{}).Where("id = ?", id).Updates(map[string]interface{}{
+			"open_count": gorm.Expr("open_count + 1"),
+			"opened_at":  gorm.Expr("COALESCE(opened_at, ?)", now),
+		}).Error; err != nil {
+			return false, err
 		}
+		return isFirst, nil
 	case domain.EventTypeClicked:
-		if err := db.WithContext(ctx).Exec("UPDATE deliveries SET click_count = click_count + 1 WHERE id = ?", id).Error; err != nil {
-			return err
+		isFirst := entity.ClickCount == 0
+		if err := db.WithContext(ctx).Model(&Delivery{}).Where("id = ?", id).Update("click_count", gorm.Expr("click_count + 1")).Error; err != nil {
+			return false, err
 		}
+		return isFirst, nil
 	case domain.EventTypeBounced:
-		if err := db.WithContext(ctx).Exec("UPDATE deliveries SET bounce_count = bounce_count + 1 WHERE id = ?", id).Error; err != nil {
-			return err
+		isFirst := entity.BounceCount == 0
+		if err := db.WithContext(ctx).Model(&Delivery{}).Where("id = ?", id).Update("bounce_count", gorm.Expr("bounce_count + 1")).Error; err != nil {
+			return false, err
 		}
+		return isFirst, nil
 	default:
-		// unknown event type: no-op
-		return nil
+		return false, nil
 	}
-
-	return nil
 }
 
 func (r *deliveryRepository) UpdateStatus(ctx context.Context, id string, status string) error {

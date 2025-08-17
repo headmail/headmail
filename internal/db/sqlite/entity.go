@@ -84,7 +84,7 @@ type Delivery struct {
 	Data            JSON                  `gorm:"column:data;type:json"`
 	Headers         JSON                  `gorm:"column:headers;type:json"`
 	Tags            JSON                  `gorm:"column:tags;type:json"`
-	CreatedAt       int64                 `gorm:"column:created_at"`
+	CreatedAt       int64                 `gorm:"column:created_at;index:,sort:desc"`
 	ScheduledAt     *int64                `gorm:"column:scheduled_at"`
 	Attempts        int                   `gorm:"column:attempts"`
 	SendScheduledAt *int64                `gorm:"column:send_scheduled_at"`

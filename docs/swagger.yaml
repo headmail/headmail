@@ -396,6 +396,19 @@ components:
           description: Unix timestamp seconds
           type: integer
       type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.CampaignStatsResponse:
+      properties:
+        labels:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
+        series:
+          items:
+            $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.StatsSeries'
+          type: array
+          uniqueItems: false
+      type: object
     github_com_headmail_headmail_pkg_api_admin_dto.CreateCampaignRequest:
       properties:
         data:
@@ -590,6 +603,21 @@ components:
           type: array
           uniqueItems: false
       type: object
+    github_com_headmail_headmail_pkg_api_admin_dto.StatsSeries:
+      properties:
+        campaign_id:
+          type: string
+        clicks:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
+        opens:
+          items:
+            type: integer
+          type: array
+          uniqueItems: false
+      type: object
     github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest:
       properties:
         data:
@@ -679,36 +707,6 @@ info:
   version: "1.0"
 openapi: 3.1.0
 paths:
-  /api/healthz:
-    get:
-      description: Returns basic health information (status, time, uptime)
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                additionalProperties: {}
-                type: object
-          description: OK
-      summary: Health check
-      tags:
-      - monitoring
-  /api/metrics:
-    get:
-      description: Exposes Prometheus metrics
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: string
-            text/plain:
-              schema:
-                type: string
-          description: Prometheus metrics
-      summary: Metrics
-      tags:
-      - monitoring
   /campaigns:
     get:
       description: List all campaigns
@@ -960,6 +958,58 @@ paths:
       summary: Get a delivery by ID
       tags:
       - deliveries
+  /campaigns/{campaignID}/stats:
+    get:
+      description: Returns time-bucketed opens and clicks for the specified campaign
+        ID.
+      parameters:
+      - description: Campaign ID
+        in: path
+        name: campaignID
+        required: true
+        schema:
+          type: string
+      - description: From unix timestamp
+        in: query
+        name: from
+        schema:
+          type: integer
+      - description: To unix timestamp
+        in: query
+        name: to
+        schema:
+          type: integer
+      - description: hour|day
+        in: query
+        name: granularity
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/github_com_headmail_headmail_pkg_api_admin_dto.CampaignStatsResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad request
+        "500":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Internal error
+      summary: Get campaign statistics (single)
+      tags:
+      - campaigns
   /campaigns/{campaignID}/status:
     patch:
       description: Update campaign status
@@ -983,6 +1033,104 @@ paths:
       summary: Update campaign status
       tags:
       - campaigns
+  /deliveries/{deliveryID}/retry:
+    post:
+      description: Reset attempt metadata and perform an immediate retry for the specified
+        delivery ID. Returns the updated delivery object.
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain.Delivery'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Internal Server Error
+      summary: Retry a delivery immediately (synchronous)
+      tags:
+      - deliveries
+  /deliveries/{deliveryID}/send-now:
+    post:
+      description: Perform an immediate send attempt for the specified delivery ID.
+        This runs synchronously and returns the updated delivery object.
+      parameters:
+      - description: Delivery ID
+        in: path
+        name: deliveryID
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/domain.Delivery'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Bad Request
+        "500":
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+          description: Internal Server Error
+      summary: Send a delivery immediately (synchronous)
+      tags:
+      - deliveries
+  /healthz:
+    get:
+      description: Returns basic health information (status, time, uptime)
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                additionalProperties: {}
+                type: object
+          description: OK
+      summary: Health check
+      tags:
+      - monitoring
   /lists:
     get:
       description: List all mailing lists
@@ -1213,6 +1361,22 @@ paths:
       summary: Replace subscribers in a list
       tags:
       - lists
+  /metrics:
+    get:
+      description: Exposes Prometheus metrics
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
+          description: Prometheus metrics
+      summary: Metrics
+      tags:
+      - monitoring
   /r/{deliveryID}/c:
     get:
       description: Records a click event and redirects to the original URL.

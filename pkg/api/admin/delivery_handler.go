@@ -32,6 +32,10 @@ func (h *DeliveryHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/campaigns/{campaignID}/deliveries/{deliveryID}", h.getDelivery)
 	r.Post("/tx", h.createTransactionalDelivery)
 	r.Get("/tx/{deliveryID}", h.getDelivery)
+
+	// Immediate send / retry endpoints for a specific delivery (synchronous)
+	r.Post("/deliveries/{deliveryID}/send-now", h.sendNow)
+	r.Post("/deliveries/{deliveryID}/retry", h.retry)
 }
 
 // @Summary List deliveries for a campaign
@@ -131,4 +135,56 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 	}
 
 	writeJson(w, http.StatusCreated, delivery)
+}
+
+// @Summary Send a delivery immediately (synchronous)
+// @Description Perform an immediate send attempt for the specified delivery ID. This runs synchronously and returns the updated delivery object.
+// @Tags deliveries
+// @Accept  json
+// @Produce  json
+// @Param   deliveryID  path  string  true  "Delivery ID"
+// @Success 200 {object} domain.Delivery
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /deliveries/{deliveryID}/send-now [post]
+func (h *DeliveryHandler) sendNow(w http.ResponseWriter, r *http.Request) {
+	deliveryID := chi.URLParam(r, "deliveryID")
+	if deliveryID == "" {
+		http.Error(w, "missing deliveryID path param", http.StatusBadRequest)
+		return
+	}
+
+	delivery, err := h.service.SendNow(r.Context(), deliveryID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJson(w, http.StatusOK, delivery)
+}
+
+// @Summary Retry a delivery immediately (synchronous)
+// @Description Reset attempt metadata and perform an immediate retry for the specified delivery ID. Returns the updated delivery object.
+// @Tags deliveries
+// @Accept  json
+// @Produce  json
+// @Param   deliveryID  path  string  true  "Delivery ID"
+// @Success 200 {object} domain.Delivery
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /deliveries/{deliveryID}/retry [post]
+func (h *DeliveryHandler) retry(w http.ResponseWriter, r *http.Request) {
+	deliveryID := chi.URLParam(r, "deliveryID")
+	if deliveryID == "" {
+		http.Error(w, "missing deliveryID path param", http.StatusBadRequest)
+		return
+	}
+
+	delivery, err := h.service.Retry(r.Context(), deliveryID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJson(w, http.StatusOK, delivery)
 }

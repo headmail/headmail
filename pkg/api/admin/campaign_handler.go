@@ -416,6 +416,18 @@ func (h *CampaignHandler) getCampaignsStats(w http.ResponseWriter, r *http.Reque
 }
 
 // getCampaignStats handles GET /campaigns/{campaignID}/stats?from=...&to=...&granularity=hour|day
+// @Summary Get campaign statistics (single)
+// @Description Returns time-bucketed opens and clicks for the specified campaign ID.
+// @Tags campaigns
+// @Produce  json
+// @Param   campaignID  path  string  true  "Campaign ID"
+// @Param   from  query  int64  false  "From unix timestamp"
+// @Param   to    query  int64  false  "To unix timestamp"
+// @Param   granularity  query  string  false  "hour|day"
+// @Success 200 {object} dto.CampaignStatsResponse
+// @Failure 400 {object} map[string]string "Bad request"
+// @Failure 500 {object} map[string]string "Internal error"
+// @Router /campaigns/{campaignID}/stats [get]
 func (h *CampaignHandler) getCampaignStats(w http.ResponseWriter, r *http.Request) {
 	campaignID := chi.URLParam(r, "campaignID")
 	if campaignID == "" {
