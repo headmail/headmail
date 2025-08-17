@@ -193,7 +193,7 @@ func (s *Server) Serve() {
 	q := s.db.QueueRepository()
 	// start scheduler: enqueue scheduled deliveries every minute
 	go func() {
-		ticker := time.NewTicker(time.Second * 5)
+		ticker := time.NewTicker(time.Second * 30)
 		defer ticker.Stop()
 		for {
 			processed := true

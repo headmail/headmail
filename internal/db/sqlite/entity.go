@@ -58,7 +58,7 @@ type Campaign struct {
 	UTMParams      JSON                  `gorm:"column:utm_params;type:json"`
 	ScheduledAt    *int64                `gorm:"column:scheduled_at"`
 	SentAt         *int64                `gorm:"column:sent_at"`
-	CreatedAt      int64                 `gorm:"column:created_at"`
+	CreatedAt      int64                 `gorm:"column:created_at;index:,sort:desc"`
 	UpdatedAt      int64                 `gorm:"column:updated_at"`
 	DeletedAt      *int64                `gorm:"column:deleted_at;index"`
 	RecipientCount int                   `gorm:"column:recipient_count"`

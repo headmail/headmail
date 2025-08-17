@@ -220,7 +220,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 		// Increment campaign recipient count atomically by number of unique deliveries created.
 		// deliveries are deduplicated by email earlier in this function, so len(deliveries)
 		// represents unique recipients for this call.
-		if campaign.ID != "" && len(deliveries) > 0 {
+		if len(deliveries) > 0 {
 			if err := s.repo.IncrementStats(txCtx, campaign.ID, len(deliveries), 0, 0, 0, 0, 0); err != nil {
 				return 0, err
 			}
