@@ -1669,12 +1669,10 @@ export interface components {
             subject?: string;
             /** @description Tags for categorization */
             tags?: string[];
-            /** @description HTML template */
-            template_html?: string;
             /** @description Optional template ID */
             template_id?: string;
-            /** @description Plain text template */
-            template_text?: string;
+            /** @description MJML template */
+            template_mjml?: string;
             /** @description Unix timestamp */
             updated_at?: number;
             /** @description UTM parameters for link tracking */
@@ -1697,7 +1695,7 @@ export interface components {
             click_count?: number;
             /** @description Timestamps */
             created_at?: number;
-            /** @description Individual data for templates */
+            /** @description backend datas */
             data?: {
                 [key: string]: unknown;
             };
@@ -1707,7 +1705,7 @@ export interface components {
             failed_at?: number;
             /** @description Reason for failure */
             failure_reason?: string;
-            /** @description Individual headers */
+            /** @description mail headers */
             headers?: {
                 [key: string]: string;
             };
@@ -1784,13 +1782,7 @@ export interface components {
         "domain.SubscriberListStatus": string;
         "domain.SubscriberStatus": string;
         "domain.Template": {
-            /** @description HTML content of the template */
-            body_html?: string;
-            /** @description BodyMJML holds the MJML source (optional). If provided, MJML will be
-             *     compiled to HTML for preview/editing/preview. */
             body_mjml?: string;
-            /** @description Text content of the template */
-            body_text?: string;
             /** @description Unix timestamp seconds */
             created_at?: number;
             /** @description UUID */
@@ -1820,8 +1812,8 @@ export interface components {
             status?: components["schemas"]["domain.CampaignStatus"];
             subject?: string;
             tags?: string[];
-            template_html?: string;
             template_id?: string;
+            template_mjml?: string;
             template_text?: string;
             utm_params?: {
                 [key: string]: string;
@@ -1850,10 +1842,7 @@ export interface components {
             subscribers?: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.CreateSubscriberRequest"][];
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.CreateTemplateRequest": {
-            body_html?: string;
-            /** @description BodyMJML allows clients to submit MJML source which can be compiled to HTML later. */
             body_mjml?: string;
-            body_text?: string;
             name?: string;
             subject?: string;
         };
@@ -1870,9 +1859,8 @@ export interface components {
             name?: string;
             subject?: string;
             tags?: string[];
-            template_html?: string;
             template_id?: string;
-            template_text?: string;
+            template_mjml?: string;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.Individual": {
             data?: {
@@ -1889,12 +1877,14 @@ export interface components {
             remove?: string[];
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateRequest": {
+            data?: {
+                [key: string]: unknown;
+            };
             email?: string;
             /** @description Sample subscriber fields used during rendering */
             name?: string;
             subject?: string;
-            templateHtml?: string;
-            templateText?: string;
+            templateMjml?: string;
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateResponse": {
             html?: string;
@@ -1923,8 +1913,8 @@ export interface components {
             status?: components["schemas"]["domain.CampaignStatus"];
             subject?: string;
             tags?: string[];
-            template_html?: string;
             template_id?: string;
+            template_mjml?: string;
             template_text?: string;
             utm_params?: {
                 [key: string]: string;
@@ -1941,10 +1931,7 @@ export interface components {
             status?: components["schemas"]["domain.SubscriberStatus"];
         };
         "github_com_headmail_headmail_pkg_api_admin_dto.UpdateTemplateRequest": {
-            body_html?: string;
-            /** @description BodyMJML allows clients to submit MJML source which can be compiled to HTML later. */
             body_mjml?: string;
-            body_text?: string;
             name?: string;
             subject?: string;
         };

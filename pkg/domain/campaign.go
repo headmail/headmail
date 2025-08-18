@@ -24,8 +24,7 @@ type Campaign struct {
 	FromEmail    string                 `json:"from_email"`             // Sender's email
 	Subject      string                 `json:"subject"`                // Subject template
 	TemplateID   *string                `json:"template_id"`            // Optional template ID
-	TemplateHTML string                 `json:"template_html"`          // HTML template
-	TemplateText string                 `json:"template_text"`          // Plain text template
+	TemplateMJML string                 `json:"template_mjml"`          // MJML template
 	Data         map[string]interface{} `json:"data"`                   // JSON data for templates
 	Tags         []string               `json:"tags"`                   // Tags for categorization
 	Headers      map[string]string      `json:"headers"`                // Additional email headers

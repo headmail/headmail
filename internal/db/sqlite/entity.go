@@ -50,7 +50,7 @@ type Campaign struct {
 	FromName       string                `gorm:"column:from_name"`
 	FromEmail      string                `gorm:"column:from_email"`
 	Subject        string                `gorm:"column:subject"`
-	TemplateHTML   string                `gorm:"column:template_html"`
+	TemplateMJML   string                `gorm:"column:template_mjml"`
 	TemplateText   string                `gorm:"column:template_text"`
 	Data           JSON                  `gorm:"column:data;type:json"`
 	Tags           JSON                  `gorm:"column:tags;type:json"`
@@ -115,10 +115,7 @@ type Template struct {
 	UpdatedAt int64  `gorm:"column:updated_at"`
 	Name      string `gorm:"column:name"`
 	Subject   string `gorm:"column:subject"`
-	BodyHTML  string `gorm:"column:body_html"`
-	BodyText  string `gorm:"column:body_text"`
-	// BodyMJML stores the optional MJML source for the template.
-	BodyMJML string `gorm:"column:body_mjml"`
+	BodyMJML  string `gorm:"column:body_mjml"`
 }
 
 // QueueItem is the GORM model for a generic queue entry.

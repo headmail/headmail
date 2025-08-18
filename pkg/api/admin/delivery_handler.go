@@ -125,8 +125,7 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 	if req.Subject != nil {
 		subject = *req.Subject
 	}
-	bodyHTML := ""
-	bodyText := ""
+	templateMJML := req.TemplateMJML
 
 	// If a template_id is provided, load template and fill missing parts from it.
 	if req.TemplateID != nil {
@@ -138,14 +137,8 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 		if subject == "" {
 			subject = tmpl.Subject
 		}
-		bodyHTML = tmpl.BodyHTML
-		bodyText = tmpl.BodyText
-	} else {
-		if req.TemplateHTML != nil {
-			bodyHTML = *req.TemplateHTML
-		}
-		if req.TemplateText != nil {
-			bodyText = *req.TemplateText
+		if templateMJML == "" {
+			templateMJML = tmpl.BodyMJML
 		}
 	}
 
@@ -156,8 +149,6 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 		Name:        req.Name,
 		Email:       req.Email,
 		Subject:     subject,
-		BodyHTML:    bodyHTML,
-		BodyText:    bodyText,
 		Data:        req.Data,
 		Headers:     req.Headers,
 		Tags:        req.Tags,
@@ -171,7 +162,7 @@ func (h *DeliveryHandler) createTransactionalDelivery(w http.ResponseWriter, r *
 		delivery.Data["template_id"] = *req.TemplateID
 	}
 
-	if err := h.service.CreateDelivery(r.Context(), delivery); err != nil {
+	if err := h.service.CreateDelivery(r.Context(), delivery, templateMJML); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

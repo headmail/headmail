@@ -31,7 +31,7 @@
 
     <div v-if="!campaign.template_id" class="mb-4">
       <label class="block text-sm font-medium text-gray-700">HTML 템플릿</label>
-      <textarea v-model="campaign.template_html" rows="10" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"></textarea>
+      <textarea v-model="campaign.template_mjml" rows="10" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"></textarea>
 
       <label class="block text-sm font-medium text-gray-700 mt-3">Plain Text</label>
       <textarea v-model="campaign.template_text" rows="6" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm"></textarea>
@@ -64,7 +64,7 @@ const campaign = ref<any>({
   name: '',
   subject: '',
   template_id: null,
-  template_html: '',
+  template_mjml: '',
   template_text: '',
 });
 
@@ -97,7 +97,7 @@ const onTemplateConfirmed = async (templateID: string | null) => {
       const tmpl = await getTemplate(templateID);
       selectedTemplateName.value = tmpl?.name || tmpl?.id || templateID;
       // clear inline content to rely on template at send-time
-      campaign.value.template_html = '';
+      campaign.value.template_mjml = '';
       campaign.value.template_text = '';
     } catch (err) {
       console.error('템플릿 로드 실패', err);
@@ -115,7 +115,7 @@ const handleCreate = async () => {
       name: campaign.value.name,
       subject: campaign.value.subject,
       template_id: campaign.value.template_id,
-      template_html: campaign.value.template_html,
+      template_mjml: campaign.value.template_mjml,
       template_text: campaign.value.template_text,
     };
     await createCampaign(payload);

@@ -34,8 +34,8 @@ type Delivery struct {
 	BodyHTML   string                 `json:"body_html"`             // HTML body
 	BodyText   string                 `json:"body_text"`             // Text body
 	MessageID  *string                `json:"message_id,omitempty"`  // SMTP Message ID
-	Data       map[string]interface{} `json:"data"`                  // Individual data for templates
-	Headers    map[string]string      `json:"headers"`               // Individual headers
+	Data       map[string]interface{} `json:"data"`                  // backend datas
+	Headers    map[string]string      `json:"headers"`               // mail headers
 	Tags       []string               `json:"tags"`                  // Tags for categorization
 
 	// Timestamps

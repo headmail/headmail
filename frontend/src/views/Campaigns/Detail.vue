@@ -44,10 +44,7 @@
 
         <div v-if="!campaign.template_id" class="mb-4">
           <label class="block text-sm font-medium text-gray-700">HTML 템플릿</label>
-          <textarea v-model="campaign.template_html" rows="10" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
-
-          <label class="block text-sm font-medium text-gray-700 mt-3">Plain Text</label>
-          <textarea v-model="campaign.template_text" rows="6" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
+          <textarea v-model="campaign.template_mjml" rows="10" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"></textarea>
         </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -118,8 +115,7 @@ const campaign = ref<Campaign>({
   subject: '',
   status: '',
   template_id: '',
-  template_html: '',
-  template_text: '',
+  template_mjml: '',
 });
 const loading = ref(true);
 const activeTab = ref<'detail' | 'send' | 'stats' | 'deliveries'>((route.query.tab as any) || 'detail');
@@ -168,9 +164,8 @@ const fetchCampaign = async () => {
     const resp = await getCampaign(campaignId);
     campaign.value = {
       ...resp,
-      template_id: (resp as any).template_id || (resp as any).templateID || null,
-      template_html: (resp as any).template_html || (resp as any).templateHTML || '',
-      template_text: (resp as any).template_text || (resp as any).templateText || '',
+      template_id: (resp as any).template_id || null,
+      template_mjml: (resp as any).template_mjml,
     };
     scheduledAtLocal.value = fromUnixSeconds(resp?.scheduled_at || null);
     if (campaign.value.template_id) {
@@ -203,8 +198,7 @@ const onTemplateConfirmed = async (templateID: string | null) => {
   campaign.value.subject = '';
   if (templateID) {
     await loadTemplateName(templateID);
-    campaign.value.template_html = '';
-    campaign.value.template_text = '';
+    campaign.value.template_mjml = '';
   } else {
     selectedTemplateName.value = null;
   }
@@ -227,8 +221,7 @@ const handleSave = async () => {
       name: campaign.value.name,
       subject: campaign.value.subject,
       template_id: campaign.value.template_id,
-      template_html: campaign.value.template_html,
-      template_text: campaign.value.template_text,
+      template_mjml: campaign.value.template_mjml,
       status: campaign.value.status,
       scheduled_at: toUnixSeconds(scheduledAtLocal.value || null) || undefined,
     });

@@ -154,7 +154,7 @@ func (s *Server) registerAdminRoutes() {
 	campaignHandler := admin.NewCampaignHandler(s.campaignService)
 	deliveryHandler := admin.NewDeliveryHandler(s.deliveryService, s.templateService)
 	subscriberHandler := admin.NewSubscriberHandler(s.listService)
-	templateHandler := admin.NewTemplateHandler(s.templateService)
+	templateHandler := admin.NewTemplateHandler(s.templateService, s.deliveryService)
 
 	s.adminRouter.Route("/api", func(r chi.Router) {
 		// register monitoring (health + prometheus metrics) using helper functions

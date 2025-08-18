@@ -26,12 +26,6 @@
             @click="activeTab = 'mjml'">
           MJML
         </button>
-        <button
-            type="button"
-            :class="['px-3 py-1 rounded-md text-sm', activeTab === 'preview' ? 'bg-blue-600 text-white' : 'bg-gray-100']"
-            @click="activeTab = 'preview'">
-          미리보기
-        </button>
         <div class="ml-auto flex items-center gap-3">
           <div class="relative">
             <button type="button" @click="showSamples = !showSamples" class="px-2 py-1 rounded-md bg-gray-100 text-sm">
@@ -90,7 +84,6 @@
         <div v-if="!serverPreviewHtml && previewLoading" class="text-sm text-gray-600">Rendering preview...</div>
 
         <div v-if="serverPreviewHtml" v-html="serverPreviewHtml" class="min-h-[120px]"></div>
-        <div v-else class="min-h-[120px]" v-html="localPreviewHtml"></div>
 
         <div v-if="serverPreviewText" class="mt-4 p-2 bg-gray-50 rounded text-sm font-mono whitespace-pre-wrap">
           {{ serverPreviewText }}
@@ -102,10 +95,35 @@
       <div class="text-xs text-gray-400 hidden sm:block">
         <div class="font-semibold text-sm mb-1">Available template variables</div>
         <ul class="list-inside list-disc">
-          <li><span class="font-mono local-pre">{{formatVarName('.name')}}</span> — user name (string)</li>
-          <li><span class="font-mono local-pre">{{formatVarName('.deliveryId')}}</span> — user email (string)</li>
-          <li><span class="font-mono local-pre">{{formatVarName('.deliveryId')}}</span> — delivery identifier generated per-send (string)</li>
+          <li><span class="font-mono local-pre">{{ formatVarName('.name') }}</span> — user name (string)</li>
+          <li><span class="font-mono local-pre">{{ formatVarName('.email') }}</span> — user email (string)</li>
+          <li><span class="font-mono local-pre">{{ formatVarName('.deliveryId') }}</span> — delivery identifier
+            generated per-send (string)
+          </li>
         </ul>
+      </div>
+    </div>
+
+    <!-- Sample Data (JSON) -->
+    <div>
+      <label for="sample_data" class="block text-sm font-semibold text-gray-900 mb-2">
+        샘플 데이터 (JSON)
+      </label>
+      <div class="relative">
+        <textarea
+            v-model="sampleData"
+            id="sample_data"
+            rows="10"
+            class="w-full font-mono px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            placeholder='예: { "firstName": "홍길동", "orderId": 12345 }'></textarea>
+        <div class="absolute top-3 right-3 flex space-x-2">
+          <button
+              type="button"
+              @click="formatSampleData"
+              class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors">
+            포맷
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -121,8 +139,8 @@ import grapesjs from 'grapesjs';
 import presetNewsletter from 'grapesjs-preset-newsletter';
 import gjsMjml from 'grapesjs-mjml';
 import 'grapesjs/dist/css/grapes.min.css';
-import mjml2html from 'mjml-browser';
 import {previewTemplate} from '../api';
+import type {components} from "@/generated/api-types.ts";
 
 const props = defineProps<{
   subject?: string;
@@ -131,9 +149,24 @@ const props = defineProps<{
   fullscreen?: boolean;
 }>();
 
+const sampleData = ref('{}');
+
 const formatVarName = (name: string) => {
   return `{{ ${name} }}`;
 }
+
+
+const formatSampleData = () => {
+  try {
+    const parsed = JSON.parse(sampleData.value || '{}');
+    sampleData.value = JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    // 간단한 사용자 알림 (추후 프로젝트의 공통 알림 컴포넌트로 교체 가능)
+    // eslint-disable-next-line no-alert
+    alert('유효하지 않은 JSON 입니다.');
+  }
+};
+
 
 // compute container style so editor has an explicit height when modal is not fullscreen
 const containerStyle = computed(() => {
@@ -145,20 +178,13 @@ const containerStyle = computed(() => {
   } as Record<string, string>;
 });
 
-const emits = defineEmits(['update:html', 'update:grapes', 'update:mjml', 'update:subject']);
+const emits = defineEmits(['update:grapes', 'update:mjml', 'update:subject']);
 
 const editorContainer = ref<HTMLElement | null>(null);
 let editor: any = null;
 
 const activeTab = ref<'editor' | 'mjml' | 'preview'>('editor');
 const localMjml = ref(props.modelValueMjml || '');
-const localPreviewHtml = computed(() => {
-  if (!localMjml.value) {
-    return '';
-  }
-  const res = mjml2html(localMjml.value, { keepComments: false });
-  return (res && (res as any).html) || '';
-})
 
 // Samples dropdown state and sample definitions (simple HTML snippets).
 const showSamples = ref(false);
@@ -296,8 +322,6 @@ const samples: Array<{ id: string; name: string; html?: string; mjml?: string }>
 const loadMjmlToEditor = () => {
   try {
     console.log('loadMjmlToEditor: ', localMjml.value)
-    // const result = mjml2html(localMjml.value, {keepComments: false});
-    // const compiledHtml = result && result.html ? result.html : '';
     editor.setComponents(localMjml.value);
   } catch (e) {
     console.error('Failed to compile MJML sample:', e);
@@ -325,10 +349,10 @@ const previewError = ref('');
 
 // Keep subject in sync with parent prop and notify parent on changes
 watch(
-  () => props.subject,
-  (v) => {
-    subjectInput.value = v || '';
-  }
+    () => props.subject,
+    (v) => {
+      subjectInput.value = v || '';
+    }
 );
 
 watch(subjectInput, (v) => {
@@ -343,14 +367,14 @@ const doServerPreview = async () => {
   previewLoading.value = true;
   previewError.value = '';
   try {
-    const req = {
-      templateHtml: localPreviewHtml.value,
-      templateText: '',
+    const req: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.PreviewTemplateRequest"] = {
+      templateMjml: localMjml.value,
       subject: subjectInput.value,
       name: sampleName.value,
       email: sampleEmail.value,
+      data: JSON.parse(sampleData.value || '{}'),
     };
-    const res = await previewTemplate(req as any);
+    const res = await previewTemplate(req);
     // response typed in generated types; guard access as defensive code
     serverPreviewHtml.value = (res && (res as any).html) || '';
     serverPreviewText.value = (res && (res as any).text) || '';
@@ -433,7 +457,7 @@ watch(
     }
 );
 
- // When switching to the editor tab, ensure GrapesJS refreshes to fit container and restore MJML-compiled HTML.
+// When switching to the editor tab, ensure GrapesJS refreshes to fit container and restore MJML-compiled HTML.
 watch(
     () => activeTab.value,
     async (val) => {
@@ -458,7 +482,8 @@ watch(
         setTimeout(() => {
           try {
             editor.render && editor.render();
-          } catch {}
+          } catch {
+          }
         }, 50);
       } catch (e) {
         // ignore
@@ -485,15 +510,11 @@ onBeforeUnmount(() => {
 */
 watch(localMjml, (v) => {
   try {
-    if (!v || typeof mjml2html !== 'function') {
+    if (!v) {
       return;
     }
     console.log(`localMjml watch: ${v}`)
-    const res = mjml2html(v, { keepComments: false });
-    const compiled = (res && (res as any).html) || '';
-    // emit mjml and compiled html to parent
     emits('update:mjml', v);
-    emits('update:html', compiled);
   } catch (e) {
     // ignore compilation errors
     console.log(`localMjml error: `, e);

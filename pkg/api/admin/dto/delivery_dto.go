@@ -13,8 +13,7 @@ type CreateTransactionalDeliveryRequest struct {
 	FromEmail    *string                `json:"from_email"`
 	Subject      *string                `json:"subject"`
 	TemplateID   *string                `json:"template_id,omitempty"`
-	TemplateHTML *string                `json:"template_html"`
-	TemplateText *string                `json:"template_text"`
+	TemplateMJML string                 `json:"template_mjml"`
 	Data         map[string]interface{} `json:"data"`
 	Tags         []string               `json:"tags"`
 	Headers      map[string]string      `json:"headers"`

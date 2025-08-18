@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Boostport/mjml-go"
 	"github.com/headmail/headmail/pkg/template"
 	"golang.org/x/net/html"
 
@@ -31,7 +32,7 @@ type deliveryQueueData struct {
 
 // DeliveryServiceProvider defines the interface for a delivery service.
 type DeliveryServiceProvider interface {
-	CreateDelivery(ctx context.Context, delivery *domain.Delivery) error
+	CreateDelivery(ctx context.Context, delivery *domain.Delivery, templateMjml string) error
 	GetDelivery(ctx context.Context, id string) (*domain.Delivery, error)
 	ListDeliveries(ctx context.Context, filter repository.DeliveryFilter, pagination repository.Pagination) ([]*domain.Delivery, int, error)
 	GetDeliveriesByCampaign(ctx context.Context, campaignID string, pagination repository.Pagination) ([]*domain.Delivery, int, error)
@@ -50,6 +51,8 @@ type DeliveryServiceProvider interface {
 
 	// Retry performs an immediate retry of the specified delivery (resets attempts/flags and sends now).
 	Retry(ctx context.Context, deliveryID string) (*domain.Delivery, error)
+
+	RenderToDelivery(ctx context.Context, dest *domain.Delivery, templateMjml string) error
 }
 
 // DeliveryService provides business logic for delivery management.
@@ -79,8 +82,8 @@ func NewDeliveryService(db repository.DB, templateService *template.Service, q q
 }
 
 // CreateDelivery creates a new delivery and enqueues immediate deliveries.
-func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.Delivery) error {
-	delivery.ID = uuid.New().String()
+func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.Delivery, templateMjml string) error {
+	delivery.ID = uuid.NewString()
 
 	// prepare delivery
 	if delivery.CreatedAt == 0 {
@@ -91,7 +94,7 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 		return errors.New("invalid status")
 	}
 
-	if err := s.renderTemplates(ctx, delivery); err != nil {
+	if err := s.RenderToDelivery(ctx, delivery, templateMjml); err != nil {
 		return err
 	}
 
@@ -107,46 +110,6 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 
 		return nil
 	})
-}
-
-func (s *DeliveryService) renderTemplates(ctx context.Context, delivery *domain.Delivery) error {
-	var err error
-
-	// Prepare data for templating
-	templateData := make(map[string]interface{})
-	if delivery.Data != nil {
-		for k, v := range delivery.Data {
-			templateData[k] = v
-		}
-	}
-	templateData["deliveryId"] = delivery.ID
-	templateData["name"] = delivery.Name
-	templateData["email"] = delivery.Email
-
-	// Render subject
-	delivery.Subject, err = s.templateService.Render(delivery.Subject, templateData)
-	if err != nil {
-		return err
-	}
-
-	// Render HTML content
-	delivery.BodyHTML, err = s.templateService.Render(delivery.BodyHTML, templateData)
-	if err != nil {
-		return err
-	}
-
-	// Render text content
-	delivery.BodyText, err = s.templateService.Render(delivery.BodyText, templateData)
-	if err != nil {
-		return err
-	}
-
-	// inject tracking into HTML before sending (rewrite links + add tracking pixel)
-	if delivery.BodyHTML != "" && s.trackingHost != "" {
-		delivery.BodyHTML = s.injectTracking(delivery.ID, delivery.BodyHTML)
-	}
-
-	return nil
 }
 
 func (s *DeliveryService) EnqueueDelivery(txCtx context.Context, delivery *domain.Delivery) error {
@@ -366,6 +329,40 @@ func (s *DeliveryService) Retry(ctx context.Context, deliveryID string) (*domain
 
 	// perform immediate synchronous send
 	return s.SendNow(ctx, deliveryID)
+}
+
+func (s *DeliveryService) RenderToDelivery(ctx context.Context, dest *domain.Delivery, templateMjml string) error {
+	var err error
+
+	templateData := make(map[string]interface{})
+	for k, v := range dest.Data {
+		templateData[k] = v
+	}
+	templateData["name"] = dest.Name
+	templateData["email"] = dest.Email
+	templateData["deliveryId"] = dest.ID
+
+	dest.Subject, err = s.templateService.Render(dest.Subject, templateData)
+	if err != nil {
+		return err
+	}
+
+	templateMjml, err = s.templateService.Render(templateMjml, templateData)
+	if err != nil {
+		return err
+	}
+
+	dest.BodyHTML, err = mjml.ToHTML(ctx, templateMjml, mjml.WithValidationLevel(mjml.Skip))
+	if err != nil {
+		return err
+	}
+
+	// inject tracking into HTML before sending (rewrite links + add tracking pixel)
+	if dest.BodyHTML != "" && s.trackingHost != "" {
+		dest.BodyHTML = s.injectTracking(dest.ID, dest.BodyHTML)
+	}
+
+	return nil
 }
 
 // sendMail - helper retained for compatibility with other code paths

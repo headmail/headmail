@@ -14,17 +14,20 @@ import (
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
 	"github.com/headmail/headmail/pkg/service"
-	tmpl "github.com/headmail/headmail/pkg/template"
 )
 
 // TemplateHandler handles HTTP requests for templates.
 type TemplateHandler struct {
-	service service.TemplateServiceProvider
+	service         service.TemplateServiceProvider
+	deliveryService service.DeliveryServiceProvider
 }
 
 // NewTemplateHandler creates a new TemplateHandler.
-func NewTemplateHandler(service service.TemplateServiceProvider) *TemplateHandler {
-	return &TemplateHandler{service: service}
+func NewTemplateHandler(service service.TemplateServiceProvider, deliveryService service.DeliveryServiceProvider) *TemplateHandler {
+	return &TemplateHandler{
+		service:         service,
+		deliveryService: deliveryService,
+	}
 }
 
 // RegisterRoutes registers the template routes to the router.
@@ -61,8 +64,6 @@ func (h *TemplateHandler) createTemplate(w http.ResponseWriter, r *http.Request)
 	template := &domain.Template{
 		Name:     req.Name,
 		Subject:  req.Subject,
-		BodyHTML: req.BodyHTML,
-		BodyText: req.BodyText,
 		BodyMJML: req.BodyMJML,
 	}
 
@@ -89,40 +90,21 @@ func (h *TemplateHandler) previewTemplate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Use package template service for rendering
-	svc := tmpl.NewService()
-
-	// Sample data (matching createDeliveryFromCampaign defaults)
-	data := map[string]interface{}{
-		"name":       req.Name,
-		"email":      req.Email,
-		"deliveryId": uuid.New().String(),
+	delivery := &domain.Delivery{
+		ID:    uuid.NewString(),
+		Name:  req.Name,
+		Email: req.Email,
+		Data:  req.Data,
 	}
-
-	renderedHTML, err := svc.Render(req.TemplateHTML, data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.deliveryService.RenderToDelivery(r.Context(), delivery, req.TemplateMJML); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var renderedText string
-	if req.TemplateText != "" {
-		if t, err := svc.Render(req.TemplateText, data); err == nil {
-			renderedText = t
-		}
-	}
-
-	var renderedSubject string
-	if req.Subject != "" {
-		if s, err := svc.Render(req.Subject, data); err == nil {
-			renderedSubject = s
-		}
-	}
-
 	resp := &dto.PreviewTemplateResponse{
-		HTML:    renderedHTML,
-		Text:    renderedText,
-		Subject: renderedSubject,
+		Subject: delivery.Subject,
+		HTML:    delivery.BodyHTML,
+		Text:    delivery.BodyText,
 	}
 	writeJson(w, http.StatusOK, resp)
 }
@@ -168,8 +150,6 @@ func (h *TemplateHandler) updateTemplate(w http.ResponseWriter, r *http.Request)
 		ID:       templateID,
 		Name:     req.Name,
 		Subject:  req.Subject,
-		BodyHTML: req.BodyHTML,
-		BodyText: req.BodyText,
 		BodyMJML: req.BodyMJML,
 	}
 

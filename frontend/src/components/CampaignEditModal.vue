@@ -41,10 +41,8 @@
         </div>
 
         <div v-if="!form.template_id">
-          <label class="block text-sm font-medium text-gray-700">HTML 템플릿</label>
-          <textarea v-model="form.template_html" rows="10" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
-          <label class="block text-sm font-medium text-gray-700 mt-3">Plain Text</label>
-          <textarea v-model="form.template_text" rows="6" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+          <label class="block text-sm font-medium text-gray-700">MJML 템플릿</label>
+          <textarea v-model="form.template_mjml" rows="10" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
         </div>
 
         <div class="flex justify-end gap-2 pt-2">
@@ -74,6 +72,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import type { Campaign, Template } from '../types';
 import { updateCampaign, getTemplates, getTemplate } from '../api';
 import TemplatePickerModal from './TemplatePickerModal.vue';
+import type {components} from "@/generated/api-types.ts";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -90,8 +89,7 @@ type FormType = {
   name: string;
   subject: string;
   template_id: string | null;
-  template_html: string;
-  template_text: string;
+  template_mjml: string;
 };
 
 const form = ref<FormType | null>(null);
@@ -116,9 +114,8 @@ watch(
         id: c.id as any || null,
         name: c.name || '',
         subject: c.subject || '',
-        template_id: (c as any).template_id || (c as any).templateID || null,
-        template_html: (c as any).template_html || (c as any).templateHTML || '',
-        template_text: (c as any).template_text || (c as any).templateText || '',
+        template_id: (c as any).template_id,
+        template_mjml: (c as any).template_mjml,
       };
       // load template name if template_id present
       if (form.value.template_id) {
@@ -151,8 +148,7 @@ const onTemplateConfirmed = async (templateID: string | null) => {
   if (templateID) {
     await loadTemplateName(templateID);
     // clear inline html/text so server/template precedence is used
-    form.value.template_html = '';
-    form.value.template_text = '';
+    form.value.template_mjml = '';
   } else {
     selectedTemplateName.value = null;
   }
@@ -176,12 +172,11 @@ const save = async () => {
   if (!form.value) return;
   saving.value = true;
   try {
-    const payload: any = {
+    const payload: components["schemas"]["github_com_headmail_headmail_pkg_api_admin_dto.UpdateCampaignRequest"] = {
       name: form.value.name,
       subject: form.value.subject,
-      template_id: form.value.template_id,
-      template_html: form.value.template_html,
-      template_text: form.value.template_text,
+      template_id: form.value.template_id || undefined,
+      template_mjml: form.value.template_mjml,
     };
     const updated = await updateCampaign(String(form.value.id), payload);
     emit('saved', updated);

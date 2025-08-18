@@ -140,18 +140,13 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 		return 0, err
 	}
 
-	// Use TemplateHTML/Text from campaign if present; otherwise, if TemplateID provided fetch missing parts from template.
-	if (campaign.TemplateHTML == "" || campaign.TemplateText == "") && campaign.TemplateID != nil {
+	// Use TemplateMJML/Text from campaign if present; otherwise, if TemplateID provided fetch missing parts from template.
+	if campaign.TemplateMJML == "" && campaign.TemplateID != nil {
 		tmpl, err := s.templateRepo.GetByID(ctx, *campaign.TemplateID)
 		if err != nil {
 			return 0, err
 		}
-		if campaign.TemplateHTML == "" {
-			campaign.TemplateHTML = tmpl.BodyHTML
-		}
-		if campaign.TemplateText == "" {
-			campaign.TemplateText = tmpl.BodyText
-		}
+		campaign.TemplateMJML = tmpl.BodyMJML
 		if campaign.Subject == "" {
 			campaign.Subject = tmpl.Subject
 		}
@@ -217,7 +212,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 		}
 
 		for _, delivery := range deliveries {
-			if err := s.deliveryService.CreateDelivery(txCtx, delivery); err != nil {
+			if err := s.deliveryService.CreateDelivery(txCtx, delivery, campaign.TemplateMJML); err != nil {
 				return 0, err
 			}
 		}
@@ -294,8 +289,6 @@ func (s *CampaignService) createDeliveryFromCampaign(campaign *domain.Campaign, 
 	}
 
 	delivery.Subject = campaign.Subject
-	delivery.BodyHTML = campaign.TemplateHTML
-	delivery.BodyText = campaign.TemplateText
 
 	return delivery, nil
 }

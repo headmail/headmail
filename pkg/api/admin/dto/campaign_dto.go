@@ -13,7 +13,7 @@ type CreateCampaignRequest struct {
 	FromEmail    string                 `json:"from_email"`
 	Subject      string                 `json:"subject"`
 	TemplateID   *string                `json:"template_id,omitempty"`
-	TemplateHTML string                 `json:"template_html"`
+	TemplateMJML string                 `json:"template_mjml"`
 	TemplateText string                 `json:"template_text"`
 	Data         map[string]interface{} `json:"data"`
 	Tags         []string               `json:"tags"`

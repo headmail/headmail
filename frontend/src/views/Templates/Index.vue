@@ -157,30 +157,9 @@
                   :modelValueMjml="templateForm.body_mjml"
                   :fullscreen="fullscreen"
                   :subject="templateForm.subject"
-                  @update:html="(v) => templateForm.body_html = v"
                   @update:mjml="(v) => templateForm.body_mjml = v"
                   @update:subject="(v) => templateForm.subject = v"
                 />
-              </div>
-            </div>
-
-            <!-- Text Body -->
-            <div>
-              <label for="body_text" class="block text-sm font-semibold text-gray-900 mb-2">
-                텍스트 본문
-              </label>
-              <div class="relative">
-                <textarea 
-                  v-model="templateForm.body_text" 
-                  id="body_text" 
-                  rows="12" 
-                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="일반 텍스트 형식의 이메일 본문을 입력하세요..."></textarea>
-                <div class="absolute top-3 right-3">
-                  <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
-                    TEXT
-                  </span>
-                </div>
               </div>
             </div>
           </form>
@@ -223,9 +202,7 @@ const fullscreen = ref(false);
 const templateForm = reactive({
   name: '',
   subject: '',
-  body_html: '',
   body_mjml: '',
-  body_text: '',
 });
 
 const fetchTemplates = async () => {
@@ -263,9 +240,7 @@ const editTemplate = (template: Template) => {
   editingTemplate.value = template;
   templateForm.name = template.name || '';
   templateForm.subject = (template as any).subject || '';
-  templateForm.body_html = template.body_html || '';
   templateForm.body_mjml = template.body_mjml || '';
-  templateForm.body_text = template.body_text || '';
   showCreateModal.value = true;
 };
 
@@ -290,9 +265,7 @@ const closeModal = () => {
   editingTemplate.value = null;
   templateForm.name = '';
   templateForm.subject = '';
-  templateForm.body_html = '';
   templateForm.body_mjml = '';
-  templateForm.body_text = '';
   fullscreen.value = false;
 };
 
