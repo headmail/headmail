@@ -80,8 +80,6 @@ func NewDeliveryService(db repository.DB, templateService *template.Service, q q
 
 // CreateDelivery creates a new delivery and enqueues immediate deliveries.
 func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.Delivery) error {
-	var err error
-
 	delivery.ID = uuid.New().String()
 
 	// prepare delivery
@@ -92,6 +90,27 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 	if delivery.Status == "" {
 		return errors.New("invalid status")
 	}
+
+	if err := s.renderTemplates(ctx, delivery); err != nil {
+		return err
+	}
+
+	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
+		// create delivery
+		if err := s.repo.Create(txCtx, delivery); err != nil {
+			return err
+		}
+
+		if delivery.Status == domain.DeliveryStatusScheduled && delivery.ScheduledAt == nil {
+			return s.EnqueueDelivery(txCtx, delivery)
+		}
+
+		return nil
+	})
+}
+
+func (s *DeliveryService) renderTemplates(ctx context.Context, delivery *domain.Delivery) error {
+	var err error
 
 	// Prepare data for templating
 	templateData := make(map[string]interface{})
@@ -127,18 +146,7 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 		delivery.BodyHTML = s.injectTracking(delivery.ID, delivery.BodyHTML)
 	}
 
-	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
-		// create delivery
-		if err := s.repo.Create(txCtx, delivery); err != nil {
-			return err
-		}
-
-		if delivery.Status == domain.DeliveryStatusScheduled && delivery.ScheduledAt == nil {
-			return s.EnqueueDelivery(txCtx, delivery)
-		}
-
-		return nil
-	})
+	return nil
 }
 
 func (s *DeliveryService) EnqueueDelivery(txCtx context.Context, delivery *domain.Delivery) error {
@@ -151,7 +159,7 @@ func (s *DeliveryService) EnqueueDelivery(txCtx context.Context, delivery *domai
 		ID:        uuid.New().String(),
 		Type:      "delivery",
 		UniqueKey: &unique,
-		Status:    "pending",
+		Status:    queue.StatusPending,
 		CreatedAt: time.Now().Unix(),
 	}
 	item.Payload, err = json.Marshal(data)
@@ -159,6 +167,9 @@ func (s *DeliveryService) EnqueueDelivery(txCtx context.Context, delivery *domai
 		return err
 	}
 	if err := s.queue.Enqueue(txCtx, item); err != nil {
+		return err
+	}
+	if err := s.repo.UpdateStatus(txCtx, delivery.ID, domain.DeliveryStatusQueued); err != nil {
 		return err
 	}
 	return nil

@@ -129,26 +129,20 @@ func (r *queueRepository) Claim(ctx context.Context, workerID string, limit int)
 
 // Ack deletes the queue item (marks done).
 func (r *queueRepository) Ack(ctx context.Context, id string) error {
-	db := extractTx(ctx, r.db.DB)
-	return db.WithContext(ctx).Where("id = ?", id).Delete(&QueueItem{}).Error
+	tx := extractTx(ctx, r.db.DB)
+	return tx.WithContext(ctx).
+		Model(&QueueItem{}).
+		Where("id = ?", id).
+		Update("status", queue.StatusDone).
+		Error
 }
 
 // Fail increments attempts and either reschedules or marks failed.
 func (r *queueRepository) Fail(ctx context.Context, id string, reason string) error {
-	return repository.Transactional0(r.db, ctx, func(txCtx context.Context) error {
-		tx := extractTx(ctx, r.db.DB)
-
-		var entity QueueItem
-		if err := tx.WithContext(ctx).First(&entity, "id = ?", id).Error; err != nil {
-			return err
-		}
-
-		entity.Status = queue.StatusFailed
-
-		if err := tx.WithContext(ctx).Save(&entity).Error; err != nil {
-			return err
-		}
-
-		return nil
-	})
+	tx := extractTx(ctx, r.db.DB)
+	return tx.WithContext(ctx).
+		Model(&QueueItem{}).
+		Where("id = ?", id).
+		Update("status", queue.StatusFailed).
+		Error
 }

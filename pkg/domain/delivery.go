@@ -15,6 +15,7 @@ type DeliveryStatus string
 const (
 	DeliveryStatusIdle      DeliveryStatus = "idle"
 	DeliveryStatusScheduled DeliveryStatus = "scheduled"
+	DeliveryStatusQueued    DeliveryStatus = "queued"
 	DeliveryStatusSent      DeliveryStatus = "sent"
 	DeliveryStatusDelivered DeliveryStatus = "delivered"
 	DeliveryStatusFailed    DeliveryStatus = "failed"

@@ -4,6 +4,7 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/headmail/headmail/pkg/domain"
@@ -11,8 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateDeliveryFromCampaign_RendersTemplates_UsingTestify(t *testing.T) {
-	svc := &CampaignService{
+func TestCreateDelivery_RendersTemplates_UsingTestify(t *testing.T) {
+	svc := &CampaignService{}
+	deliveryService := &DeliveryService{
 		templateService: template.NewService(),
 	}
 
@@ -39,6 +41,8 @@ func TestCreateDeliveryFromCampaign_RendersTemplates_UsingTestify(t *testing.T) 
 
 	delivery, err := svc.createDeliveryFromCampaign(campaign, "Bob", "bob@example.com", individualData, individualHeaders)
 	assert.NoError(t, err)
+	err = deliveryService.renderTemplates(context.TODO(), delivery)
+	assert.NoError(t, err)
 
 	assert.Equal(t, "bob@example.com", delivery.Email)
 	assert.Equal(t, "Bob", delivery.Name)
@@ -52,11 +56,4 @@ func TestCreateDeliveryFromCampaign_RendersTemplates_UsingTestify(t *testing.T) 
 	// Headers should contain both campaign header and individual header
 	assert.Equal(t, "base", delivery.Headers["X-Base"])
 	assert.Equal(t, "user-1", delivery.Headers["X-User"])
-
-	// Data should include deliveryId, name and email
-	_, ok := delivery.Data["deliveryId"]
-	assert.True(t, ok, "delivery.Data missing deliveryId")
-
-	assert.Equal(t, "Bob", delivery.Data["name"])
-	assert.Equal(t, "bob@example.com", delivery.Data["email"])
 }

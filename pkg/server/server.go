@@ -125,7 +125,6 @@ func New(cfg *config.Config, opts ...Option) (*Server, error) {
 	srv.campaignService = service.NewCampaignService(
 		srv.db,
 		srv.deliveryService,
-		templateService,
 	)
 
 	srv.templateService = service.NewTemplateService(srv.db)
@@ -260,15 +259,21 @@ func (s *Server) enqueueDueDeliveries() int {
 	}
 
 	// find scheduled deliveries directly from repository by timestamp
-	deliveries, err := s.db.DeliveryRepository().ListScheduledBefore(ctx, now, 1000)
+	deliveries, err := s.db.DeliveryRepository().ListScheduledBefore(ctx, now, 100)
 	if err != nil {
 		log.Printf("scheduler: failed to list scheduled deliveries: %v", err)
 		return 0
 	}
-	for _, d := range deliveries {
-		if err := s.deliveryService.EnqueueDelivery(ctx, d); err != nil {
-			log.Printf("scheduler: enqueue failed for delivery %s: %v", d.ID, err)
+
+	if err := repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
+		for _, d := range deliveries {
+			if err := s.deliveryService.EnqueueDelivery(txCtx, d); err != nil {
+				log.Printf("scheduler: enqueue failed for delivery %s: %v", d.ID, err)
+			}
 		}
+		return nil
+	}); err != nil {
+		log.Printf("scheduler: enqueue deliveries failed: %+v", err)
 	}
 	return len(deliveries)
 }

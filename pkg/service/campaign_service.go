@@ -7,7 +7,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/headmail/headmail/pkg/template"
 	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
@@ -44,14 +43,12 @@ type CampaignService struct {
 	subscriberRepo  repository.SubscriberRepository
 	templateRepo    repository.TemplateRepository
 	deliveryService DeliveryServiceProvider
-	templateService *template.Service
 }
 
 // NewCampaignService creates a new CampaignService.
 func NewCampaignService(
 	db repository.DB,
 	deliveryService DeliveryServiceProvider,
-	templateService *template.Service,
 ) *CampaignService {
 	return &CampaignService{
 		db:              db,
@@ -60,7 +57,6 @@ func NewCampaignService(
 		subscriberRepo:  db.SubscriberRepository(),
 		deliveryService: deliveryService,
 		templateRepo:    db.TemplateRepository(),
-		templateService: templateService,
 	}
 }
 
