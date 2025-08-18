@@ -4,7 +4,6 @@
 package service
 
 import (
-	"context"
 	"testing"
 
 	"github.com/headmail/headmail/pkg/domain"
