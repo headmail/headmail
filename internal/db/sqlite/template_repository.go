@@ -45,7 +45,10 @@ func (r *templateRepository) Update(ctx context.Context, template *domain.Templa
 }
 
 func (r *templateRepository) Delete(ctx context.Context, id string) error {
-	return r.db.WithContext(ctx).Delete(&Template{}, "id = ?", id).Error
+	return r.db.WithContext(ctx).Model(&Template{}).
+		Where("id = ?", id).
+		Update("deleted_at", time.Now().Unix()).
+		Error
 }
 
 func (r *templateRepository) List(ctx context.Context, pagination repository.Pagination) ([]*domain.Template, int, error) {
@@ -53,6 +56,8 @@ func (r *templateRepository) List(ctx context.Context, pagination repository.Pag
 	var total int64
 
 	query := r.db.WithContext(ctx).Model(&Template{})
+
+	query = query.Where("deleted_at IS NULL")
 
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err

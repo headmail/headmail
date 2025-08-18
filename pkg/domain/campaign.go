@@ -13,6 +13,7 @@ const (
 	CampaignStatusSent      CampaignStatus = "sent"
 	CampaignStatusPaused    CampaignStatus = "paused"
 	CampaignStatusCancelled CampaignStatus = "cancelled"
+	CampaignStatusDeleted   CampaignStatus = "deleted"
 )
 
 // Campaign represents an email campaign.

@@ -27,6 +27,7 @@ type Subscriber struct {
 	Status    domain.SubscriberStatus `gorm:"column:status"`
 	CreatedAt int64                   `gorm:"column:created_at"`
 	UpdatedAt int64                   `gorm:"column:updated_at"`
+	DeletedAt *int64                  `gorm:"column:updated_at"`
 	Lists     []SubscriberList        `gorm:"foreignKey:SubscriberID"`
 }
 
@@ -113,6 +114,7 @@ type Template struct {
 	ID        string `gorm:"column:id;primaryKey"`
 	CreatedAt int64  `gorm:"column:created_at"`
 	UpdatedAt int64  `gorm:"column:updated_at"`
+	DeletedAt *int64 `gorm:"column:deleted_at"`
 	Name      string `gorm:"column:name"`
 	Subject   string `gorm:"column:subject"`
 	BodyMJML  string `gorm:"column:body_mjml"`

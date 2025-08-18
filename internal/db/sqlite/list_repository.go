@@ -87,7 +87,10 @@ func (r *listRepository) Update(ctx context.Context, list *domain.List) error {
 
 func (r *listRepository) Delete(ctx context.Context, id string) error {
 	db := extractTx(ctx, r.db.DB)
-	return db.WithContext(ctx).Delete(&List{}, "id = ?", id).Error
+	return db.WithContext(ctx).Model(&List{}).
+		Where("id = ?", id).
+		Update("deleted_at", time.Now().Unix()).
+		Error
 }
 
 func (r *listRepository) List(ctx context.Context, filter repository.ListFilter, pagination repository.Pagination) ([]*domain.List, int, error) {
@@ -96,6 +99,8 @@ func (r *listRepository) List(ctx context.Context, filter repository.ListFilter,
 
 	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&List{})
+
+	query = query.Where("deleted_at IS NULL")
 
 	if filter.Search != "" {
 		query = query.Where("name LIKE ?", "%"+filter.Search+"%")

@@ -8,6 +8,7 @@ type SubscriberStatus string
 const (
 	SubscriberStatusEnabled  SubscriberStatus = "enabled"
 	SubscriberStatusDisabled SubscriberStatus = "disabled"
+	SubscriberStatusDeleted  SubscriberStatus = "deleted"
 )
 
 type SubscriberListStatus string

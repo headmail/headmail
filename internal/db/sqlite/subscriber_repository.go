@@ -6,6 +6,7 @@ package sqlite
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/domain"
@@ -157,10 +158,11 @@ func (r *subscriberRepository) Delete(ctx context.Context, id string) error {
 	if err := db.WithContext(ctx).Delete(&SubscriberList{}, "subscriber_id = ?", id).Error; err != nil {
 		return err
 	}
-	if err := db.WithContext(ctx).Delete(&Subscriber{}, "id = ?", id).Error; err != nil {
-		return err
-	}
-	return nil
+	return db.WithContext(ctx).Model(&Subscriber{}).
+		Where("id = ?", id).
+		Update("status", domain.SubscriberStatusDeleted).
+		Update("deleted_at", time.Now().Unix()).
+		Error
 }
 
 func (r *subscriberRepository) List(ctx context.Context, filter repository.SubscriberFilter, pagination repository.Pagination) ([]*domain.Subscriber, int, error) {
@@ -179,6 +181,8 @@ func (r *subscriberRepository) List(ctx context.Context, filter repository.Subsc
 	}
 	if filter.Status != "" {
 		query = query.Where("subscribers.status = ?", filter.Status)
+	} else {
+		query = query.Where("subscribers.status != ?", domain.SubscriberStatusDeleted)
 	}
 	if filter.Search != "" {
 		query = query.Where("subscribers.email LIKE ? OR subscribers.name LIKE ?", "%"+filter.Search+"%", "%"+filter.Search+"%")

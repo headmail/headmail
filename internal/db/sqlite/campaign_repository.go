@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	"github.com/headmail/headmail/pkg/domain"
 	"github.com/headmail/headmail/pkg/repository"
@@ -158,7 +159,11 @@ func (r *campaignRepository) Update(ctx context.Context, campaign *domain.Campai
 
 func (r *campaignRepository) Delete(ctx context.Context, id string) error {
 	db := extractTx(ctx, r.db.DB)
-	return db.WithContext(ctx).Delete(&Campaign{}, "id = ?", id).Error
+	return db.WithContext(ctx).Model(&Campaign{}).
+		Where("id = ?", id).
+		Update("status", domain.CampaignStatusDeleted).
+		Update("deleted_at", time.Now().Unix()).
+		Error
 }
 
 func (r *campaignRepository) List(ctx context.Context, filter repository.CampaignFilter, pagination repository.Pagination) ([]*domain.Campaign, int, error) {
@@ -167,6 +172,8 @@ func (r *campaignRepository) List(ctx context.Context, filter repository.Campaig
 
 	db := extractTx(ctx, r.db.DB)
 	query := db.WithContext(ctx).Model(&Campaign{})
+
+	query = query.Where("status != ?", domain.CampaignStatusDeleted)
 
 	if len(filter.Status) > 0 {
 		query = query.Where("status IN (?)", filter.Status)
