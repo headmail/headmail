@@ -38,7 +38,7 @@ func TestCreateDeliveryFromCampaign_RendersTemplates_UsingTestify(t *testing.T) 
 		"X-User": "user-1",
 	}
 
-	delivery, err := svc.createDeliveryFromCampaign(context.Background(), campaign, "Bob", "bob@example.com", individualData, individualHeaders)
+	delivery, err := svc.createDeliveryFromCampaign(campaign, "Bob", "bob@example.com", individualData, individualHeaders)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "bob@example.com", delivery.Email)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/headmail/headmail/pkg/template"
+	"github.com/pkg/errors"
 
 	"github.com/google/uuid"
 	"github.com/headmail/headmail/pkg/api/admin/dto"
@@ -74,11 +75,16 @@ func (s *CampaignService) CreateCampaign(ctx context.Context, campaign *domain.C
 		return s.repo.Create(ctx, campaign)
 	}
 
+	if err := s.validateCampaignInput(ctx, campaign); err != nil {
+		return err
+	}
+
 	// ID provided: check existence
 	existing, err := s.repo.GetByID(ctx, campaign.ID)
 	if err != nil {
 		// If not found, create new
-		if _, ok := err.(*repository.ErrNotFound); ok {
+		var errNotFound *repository.ErrNotFound
+		if errors.As(err, &errNotFound) {
 			now := time.Now().Unix()
 			campaign.CreatedAt = now
 			campaign.UpdatedAt = now
@@ -109,6 +115,9 @@ func (s *CampaignService) GetCampaign(ctx context.Context, id string) (*domain.C
 func (s *CampaignService) UpdateCampaign(ctx context.Context, campaign *domain.Campaign) error {
 	// When updating, set UpdatedAt to current time
 	campaign.UpdatedAt = time.Now().Unix()
+	if err := s.validateCampaignInput(ctx, campaign); err != nil {
+		return err
+	}
 	return s.repo.Update(ctx, campaign)
 }
 
@@ -136,7 +145,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 	}
 
 	// Use TemplateHTML/Text from campaign if present; otherwise, if TemplateID provided fetch missing parts from template.
-	if (campaign.TemplateHTML == "" || campaign.TemplateText == "") && campaign.TemplateID != nil && *campaign.TemplateID != "" {
+	if (campaign.TemplateHTML == "" || campaign.TemplateText == "") && campaign.TemplateID != nil {
 		tmpl, err := s.templateRepo.GetByID(ctx, *campaign.TemplateID)
 		if err != nil {
 			return 0, err
@@ -176,7 +185,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 					continue
 				}
 
-				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, individual.Name, individual.Email, individual.Data, individual.Headers)
+				delivery, err := s.createDeliveryFromCampaign(campaign, individual.Name, individual.Email, individual.Data, individual.Headers)
 				if err != nil {
 					return 0, err // Or handle error more gracefully
 				}
@@ -202,7 +211,7 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 				if processedEmails[subscriber.Email] {
 					continue
 				}
-				delivery, err := s.createDeliveryFromCampaign(txCtx, campaign, subscriber.Name, subscriber.Email, nil, nil)
+				delivery, err := s.createDeliveryFromCampaign(campaign, subscriber.Name, subscriber.Email, nil, nil)
 				if err != nil {
 					return 0, err // Or handle error more gracefully
 				}
@@ -230,11 +239,17 @@ func (s *CampaignService) CreateDeliveries(ctx context.Context, campaignID strin
 	})
 }
 
-func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campaign *domain.Campaign, name, email string, individualData map[string]interface{}, individualHeaders map[string]string) (*domain.Delivery, error) {
-	var err error
+func (s *CampaignService) validateCampaignInput(ctx context.Context, campaign *domain.Campaign) error {
+	if campaign.TemplateID != nil {
+		if _, err := s.templateRepo.GetByID(ctx, *campaign.TemplateID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
+func (s *CampaignService) createDeliveryFromCampaign(campaign *domain.Campaign, name, email string, individualData map[string]interface{}, individualHeaders map[string]string) (*domain.Delivery, error) {
 	delivery := &domain.Delivery{
-		ID:    uuid.New().String(),
 		Type:  domain.DeliveryTypeCampaign,
 		Name:  name,
 		Email: email,
@@ -270,27 +285,6 @@ func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campai
 			delivery.Data[k] = v
 		}
 	}
-	delivery.Data["deliveryId"] = delivery.ID
-	delivery.Data["name"] = name
-	delivery.Data["email"] = email
-
-	// Render subject
-	delivery.Subject, err = s.templateService.Render(campaign.Subject, delivery.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Render HTML content
-	delivery.BodyHTML, err = s.templateService.Render(campaign.TemplateHTML, delivery.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Render text content
-	delivery.BodyText, err = s.templateService.Render(campaign.TemplateText, delivery.Data)
-	if err != nil {
-		return nil, err
-	}
 
 	// Prepare headers
 	delivery.Headers = make(map[string]string)
@@ -302,6 +296,10 @@ func (s *CampaignService) createDeliveryFromCampaign(ctx context.Context, campai
 			delivery.Headers[k] = v
 		}
 	}
+
+	delivery.Subject = campaign.Subject
+	delivery.BodyHTML = campaign.TemplateHTML
+	delivery.BodyText = campaign.TemplateText
 
 	return delivery, nil
 }

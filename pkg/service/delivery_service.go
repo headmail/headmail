@@ -33,7 +33,6 @@ type deliveryQueueData struct {
 type DeliveryServiceProvider interface {
 	CreateDelivery(ctx context.Context, delivery *domain.Delivery) error
 	GetDelivery(ctx context.Context, id string) (*domain.Delivery, error)
-	UpdateDelivery(ctx context.Context, delivery *domain.Delivery) error
 	ListDeliveries(ctx context.Context, filter repository.DeliveryFilter, pagination repository.Pagination) ([]*domain.Delivery, int, error)
 	GetDeliveriesByCampaign(ctx context.Context, campaignID string, pagination repository.Pagination) ([]*domain.Delivery, int, error)
 	UpdateDeliveryStatus(ctx context.Context, id string, status domain.DeliveryStatus) error
@@ -123,6 +122,11 @@ func (s *DeliveryService) CreateDelivery(ctx context.Context, delivery *domain.D
 		return err
 	}
 
+	// inject tracking into HTML before sending (rewrite links + add tracking pixel)
+	if delivery.BodyHTML != "" && s.trackingHost != "" {
+		delivery.BodyHTML = s.injectTracking(delivery.ID, delivery.BodyHTML)
+	}
+
 	return repository.Transactional0(s.db, ctx, func(txCtx context.Context) error {
 		// create delivery
 		if err := s.repo.Create(txCtx, delivery); err != nil {
@@ -165,11 +169,6 @@ func (s *DeliveryService) GetDelivery(ctx context.Context, id string) (*domain.D
 	return s.repo.GetByID(ctx, id)
 }
 
-// UpdateDelivery updates an existing delivery.
-func (s *DeliveryService) UpdateDelivery(ctx context.Context, delivery *domain.Delivery) error {
-	return s.repo.Update(ctx, delivery)
-}
-
 // ListDeliveries lists all deliveries.
 func (s *DeliveryService) ListDeliveries(ctx context.Context, filter repository.DeliveryFilter, pagination repository.Pagination) ([]*domain.Delivery, int, error) {
 	return s.repo.List(ctx, filter, pagination)
@@ -199,10 +198,6 @@ func (s *DeliveryService) HandleDeliveryQueuedItem(ctx context.Context, workerID
 		return nil
 	}
 
-	// inject tracking into HTML before sending (rewrite links + add tracking pixel)
-	if d.BodyHTML != "" && s.trackingHost != "" {
-		d.BodyHTML = s.injectTracking(d.ID, d.BodyHTML)
-	}
 	err = s.mailer.Send(ctx, d)
 	now := time.Now().Unix()
 	if err != nil {
@@ -295,11 +290,6 @@ func (s *DeliveryService) SendNow(ctx context.Context, deliveryID string) (*doma
 	}
 
 	prevStatus := d.Status
-
-	// inject tracking before sending
-	if d.BodyHTML != "" && s.trackingHost != "" {
-		d.BodyHTML = s.injectTracking(d.ID, d.BodyHTML)
-	}
 
 	err = s.mailer.Send(ctx, d)
 	now := time.Now().Unix()
